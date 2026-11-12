@@ -103,3 +103,7 @@ NAS 当前为用户级常驻服务，尚未注册重启自动启动；自动从�
 | `design/` · `docs/` | 设计源文件、截图、协议和验证记录 |
 
 接口定义见 [OpenAPI](spec/openapi.yaml)。`.private/`、运行时照片、数据库、密钥与构建产物不进入 Git；README 使用的截图单独保存在 `docs/screenshots/`。
+
+## 许可证
+
+代码采用 [MIT License](LICENSE)。文档中的运行截图用于说明实际界面；截图内的作业内容不作为应用内置资源分发。第三方依赖沿用各自的许可证。
