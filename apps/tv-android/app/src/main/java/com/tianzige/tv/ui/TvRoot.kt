@@ -23,19 +23,7 @@ import com.tianzige.tv.ui.theme.LocalTz
 import com.tianzige.tv.vm.HomeUiState
 import com.tianzige.tv.vm.HomeViewModel
 
-/**
- * 整个 App 的根节点，也是唯一的按键入口。
- *
- * 键位模型（docs/04-电视端UI.md §2）：
- *   ← →  换日期（跨周自动翻）
- *   ↑ ↓  换科目 / 换图 / 全屏时滚图
- *   OK   看大图
- *   返回 全屏 → 主屏；主屏 → 退出确认
- *   菜单 设置
- *
- * 除了日期条上那一个真实焦点，没有任何别的可聚焦元素；
- * 方向键在这里被消费掉，所以焦点既不会乱跑，也不会有「按住连跳的惯性」。
- */
+/** 首页使用原生空间焦点；这里只处理设置、退出和大图的模态按键。 */
 @Composable
 fun TvRoot(state: HomeUiState, vm: HomeViewModel, onExit: () -> Unit) {
     val tz = LocalTz.current
@@ -67,7 +55,7 @@ fun TvRoot(state: HomeUiState, vm: HomeViewModel, onExit: () -> Unit) {
                     routeKey(event.nativeKeyEvent.keyCode, state, vm, viewerScroll, scrollStep)
             },
     ) {
-        HomeScreen(state = state)
+        HomeScreen(state = state, vm = vm)
         if (state.fullscreen) {
             FullscreenViewer(url = state.fullscreenUrl, scroll = viewerScroll)
         }
@@ -124,21 +112,9 @@ private fun routeKey(
     }
 
     return when (code) {
-        AndroidKeyEvent.KEYCODE_DPAD_LEFT -> {
-            vm.moveDay(-1); true
-        }
-        AndroidKeyEvent.KEYCODE_DPAD_RIGHT -> {
-            vm.moveDay(1); true
-        }
-        AndroidKeyEvent.KEYCODE_DPAD_UP -> {
-            vm.stepItem(-1); true
-        }
-        AndroidKeyEvent.KEYCODE_DPAD_DOWN -> {
-            vm.stepItem(1); true
-        }
+        // Home navigation follows visible focusable dates, photos and subjects.
         OK_CENTER, OK_ENTER, OK_NUMPAD -> {
-            if (state.day == null && state.fatalError != null) vm.openSettings() else vm.openFullscreen()
-            true
+            if (state.day == null && state.fatalError != null) { vm.openSettings(); true } else false
         }
         AndroidKeyEvent.KEYCODE_MENU -> {
             vm.openSettings(); true

@@ -40,7 +40,7 @@ printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAFAAAAAoCAIAAADmAupWAAAAUUlEQVR4nOzPAQ2AMAD
 # 用服务端返回的时间取日期，避免本机时区与 Asia/Shanghai 不一致
 DATE="$(printf '%s' "$HEALTH" | sed -n 's/.*"time":"\([0-9][0-9-]*\)T.*/\1/p')"
 [ -n "$DATE" ] || DATE="$(date +%Y-%m-%d)"
-echo "== POST /api/ingest（日期 $DATE）=="
+echo "== POST /api/ingest（日期 ${DATE}）=="
 INGEST="$(curl -fsS -X POST "$BASE/api/ingest" \
   -F "files=@$WORK/homework.png;type=image/png" \
   -F "note=数学练习册 P18" \

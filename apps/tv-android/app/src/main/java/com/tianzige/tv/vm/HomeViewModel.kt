@@ -137,7 +137,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                         imageIndex = if (jump) 0 else s.imageIndex,
                     )
                 }
-                ensureMarks(target)
+                ensureMarks(target, force = true)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -179,10 +179,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** 日期条圆点：一次取一周（/api/days 会返回区间内每一天）。 */
-    private fun ensureMarks(date: LocalDate) {
+    private fun ensureMarks(date: LocalDate, force: Boolean = false) {
         val week = DayLogic.weekDays(date)
         val covered = week.all { markMemory.containsKey(DayLogic.format(it)) }
-        if (covered) {
+        if (covered && !force) {
             _state.update { it.copy(marks = markMemory.toMap()) }
             return
         }
@@ -232,6 +232,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** ↑↓：ready 换科目，pending 换图（docs/04-电视端UI.md §2）。 */
+    fun selectImage(index: Int) {
+        _state.update { it.copy(imageIndex = DayLogic.clampIndex(index, it.day?.images?.size ?: 0)) }
+    }
+
+    fun selectSubject(index: Int) {
+        _state.update { it.copy(subjectIndex = DayLogic.clampIndex(index, it.day?.subjects?.size ?: 0)) }
+    }
+
     fun stepItem(delta: Int) {
         val now = _state.value
         val day = now.day ?: return
@@ -251,7 +259,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     fun openFullscreen() {
         val now = _state.value
         val day = now.day ?: return
-        val path = DayLogic.imageFor(day, DayLogic.effectiveState(day), now.subjectIndex, now.imageIndex)
+        val path = day.images.getOrNull(DayLogic.clampIndex(now.imageIndex, day.images.size))?.url
             ?: return
         val url = DayLogic.absoluteUrl(now.serverUrl, path)
         _state.update { it.copy(fullscreen = true, fullscreenUrl = url) }
@@ -344,12 +352,16 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
         val url = DayLogic.normalizeServerUrl(raw)
         settings.saveServerUrl(url)
+        dayJob?.cancel()
+        marksJob?.cancel()
         dayMemory.clear()
+        markMemory.clear()
         userNavigated = false
         val today = _state.value.today
         _state.update {
             it.copy(
                 serverUrl = url,
+                marks = emptyMap(),
                 showSettings = false,
                 settingsMessage = null,
                 settingsNoticeOk = false,
@@ -404,11 +416,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     // ---------------------------------------------------------------- 回到前台
 
     /** 电视常年不关机，回到前台顺手刷一次（30 秒内不重复请求）。 */
-    fun onResume() {
+    fun onResume() = refreshIfNeeded()
+
+    fun refreshIfNeeded(backgroundPoll: Boolean = false) {
         if (_state.value.showSettings) return
-        if (System.currentTimeMillis() - lastFetchAt < 30_000L) return
+        val interval = if (!backgroundPoll) 30_000L else if (_state.value.dayState() == DayState.PENDING) 4_000L else 300_000L
+        if (System.currentTimeMillis() - lastFetchAt < interval) return
         val today = LocalDate.now()
-        _state.update { it.copy(today = today) }
+        _state.update { it.copy(today = today, selectedDate = if (it.selectedDate == it.today) today else it.selectedDate) }
         fetchDay(target = _state.value.selectedDate, jumpToDate = false)
         ensureMarks(_state.value.selectedDate)
     }

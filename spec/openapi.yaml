@@ -29,6 +29,74 @@ tags:
     description: 运维
 
 paths:
+  /api/settings/ai:
+    get:
+      tags: [ops]
+      summary: 读取当前 AI 服务设置（不返回密钥）
+      description: 仅 NAS 上传页同源访问，响应禁止缓存。只有 has_api_key 表示是否已保存密钥。
+      responses:
+        '200':
+          description: 当前设置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIProviderView'
+        '403':
+          description: 非同源请求
+    put:
+      tags: [ops]
+      summary: 保存并立即应用 AI 服务设置
+      description: |
+        保存于数据目录的 .private/ai-provider.json，文件权限 600。
+        api_key 留空时，只在 API 地址未变化时保留现有密钥。
+        更换地址需重新提供密钥，或显式设置 no_auth=true。
+        新批次立即使用新配置；正在处理的批次保留原模型组合。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIProviderInput'
+      responses:
+        '200':
+          description: 保存后的设置（不返回密钥）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIProviderView'
+        '400':
+          description: 配置无效或无法保存，现有配置不变
+        '403':
+          description: 非同源请求
+  /api/settings/ai/test:
+    post:
+      tags: [ops]
+      summary: 测试候选 AI 服务的图片输入
+      description: |
+        使用候选配置发送小图片，可能消耗模型额度，最多等待 60 秒。
+        不保存、不切换当前配置、不产生作业记录。密钥留空规则与保存相同。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIProviderInput'
+      responses:
+        '200':
+          description: 模型接受图片请求
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: 配置无效、模型拒绝图片或连接失败
+        '403':
+          description: 非同源请求
 
   /api/health:
     get:
@@ -307,6 +375,46 @@ components:
             error: { code: unsupported_type, message: "只接受 jpg/png/heic/webp" }
 
   schemas:
+    AIProviderInput:
+      type: object
+      additionalProperties: false
+      required: [profile, base_url, model]
+      properties:
+        profile:
+          type: string
+          enum: [openai, zai]
+          description: 通用 OpenAI 兼容参数，或 Z.AI/GLM 的 thinking 参数
+        base_url:
+          type: string
+          format: uri
+          description: 支持 HTTP/HTTPS，可粘贴基础地址或完整 chat/completions 地址
+        model:
+          type: string
+          maxLength: 200
+          description: 同时用于图片识别与分科，必须支持图片输入
+        api_key:
+          type: string
+          maxLength: 4096
+          writeOnly: true
+          description: 留空在同一 API 地址下保留已有密钥
+        no_auth:
+          type: boolean
+          default: false
+          description: 显式允许无密钥的本地服务，并清除已保存密钥
+    AIProviderView:
+      type: object
+      required: [profile, base_url, model, has_api_key, no_auth]
+      properties:
+        profile:
+          type: string
+        base_url:
+          type: string
+        model:
+          type: string
+        has_api_key:
+          type: boolean
+        no_auth:
+          type: boolean
 
     BatchStatus:
       type: string

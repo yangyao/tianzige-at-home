@@ -13,8 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.darkColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 
 // ---------------------------------------------------------------------------
 // 色值：design/tokens.json · color.*

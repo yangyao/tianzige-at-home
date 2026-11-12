@@ -55,7 +55,7 @@ struct SettingsView: View {
                 .font(Theme.Fonts.caption)
                 .foregroundColor(Theme.textSecondary)
 
-            TextField("http://nas.local:8080", text: $settings.baseURLString)
+            TextField(AppSettings.defaultBaseURLString, text: $settings.baseURLString)
                 .font(Theme.Fonts.body)
                 .foregroundColor(Theme.textPrimary)
                 .keyboardType(.URL)
@@ -78,7 +78,7 @@ struct SettingsView: View {
                     testState = .idle
                 }
 
-            Text("填家里 NAS 的局域网地址，例如 http://192.168.1.20:8080")
+            Text("已预设家里的 NAS 地址，需要时可修改。")
                 .font(Theme.Fonts.min)
                 .foregroundColor(Theme.textDim)
         }

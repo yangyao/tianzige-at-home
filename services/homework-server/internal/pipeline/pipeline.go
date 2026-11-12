@@ -31,12 +31,21 @@ type Pipeline struct {
 	once  sync.Once
 	wg    sync.WaitGroup
 
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	modelMu  sync.RWMutex
+	provider func() (ocr.Engine, parse.Parser)
+
 	procMu sync.Mutex // 同一时刻只处理一个批次，测试里直接调 ProcessOnce 也安全
 }
 
 // New 构造流水线（未启动）。队列容量 256，够家用。
 func New(st *store.Store, engine ocr.Engine, parser parse.Parser, logger *log.Logger) *Pipeline {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Pipeline{
+		ctx:    ctx,
+		cancel: cancel,
 		st:     st,
 		engine: engine,
 		parser: parser,
@@ -45,6 +54,13 @@ func New(st *store.Store, engine ocr.Engine, parser parse.Parser, logger *log.Lo
 		stop:   make(chan struct{}),
 		done:   make(chan struct{}),
 	}
+}
+
+// SetProvider supplies an atomic model pair for each new batch.
+func (p *Pipeline) SetProvider(provider func() (ocr.Engine, parse.Parser)) {
+	p.modelMu.Lock()
+	p.provider = provider
+	p.modelMu.Unlock()
 }
 
 // Start 启动 worker。
@@ -58,7 +74,7 @@ func (p *Pipeline) Start() {
 			case <-p.stop:
 				return
 			case id := <-p.queue:
-				if err := p.ProcessOnce(context.Background(), id); err != nil {
+				if err := p.ProcessOnce(p.ctx, id); err != nil {
 					p.logger.Printf("批次 %d 处理失败: %v", id, err)
 				}
 			}
@@ -76,7 +92,7 @@ func (p *Pipeline) Enqueue(id int64) {
 
 // Stop 停止接收新任务，并等待正在处理的批次完成。
 func (p *Pipeline) Stop() {
-	p.once.Do(func() { close(p.stop) })
+	p.once.Do(func() { close(p.stop); p.cancel() })
 	p.wg.Wait()
 }
 
@@ -96,6 +112,13 @@ func (p *Pipeline) Recover(ctx context.Context) ([]int64, error) {
 func (p *Pipeline) ProcessOnce(ctx context.Context, id int64) error {
 	p.procMu.Lock()
 	defer p.procMu.Unlock()
+	engine, parser := p.engine, p.parser
+	p.modelMu.RLock()
+	provider := p.provider
+	p.modelMu.RUnlock()
+	if provider != nil {
+		engine, parser = provider()
+	}
 
 	b, err := p.st.GetBatch(ctx, id)
 	if errors.Is(err, store.ErrNotFound) {
@@ -115,7 +138,7 @@ func (p *Pipeline) ProcessOnce(ctx context.Context, id int64) error {
 		text := img.OCRRaw
 		if strings.TrimSpace(text) == "" {
 			cctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-			text, err = p.engine.Recognize(cctx, ocr.Image{
+			text, err = engine.Recognize(cctx, ocr.Image{
 				Path: filepath.Join(p.st.Dir(), img.Path),
 				MIME: mimeByExt(img.Path),
 			})
@@ -135,7 +158,7 @@ func (p *Pipeline) ProcessOnce(ctx context.Context, id int64) error {
 		return err
 	}
 
-	groups, err := p.parser.Parse(ctx, strings.Join(texts, "\n\n"), b.Note)
+	groups, err := parser.Parse(ctx, strings.Join(texts, "\n\n"), b.Note)
 	if err != nil {
 		return p.fail(ctx, id, "分科失败："+err.Error())
 	}

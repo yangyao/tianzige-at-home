@@ -1,3 +1,7 @@
+> 2026-11-12 实测更新：已用本机 Go 1.20.5 构建并部署到真实 Linux arm64 NAS。
+> 默认使用私有文件中的 Z.AI 配置与 glm-5.3-flash；缺少密钥时只保留原图，不返回示例作业。
+> 构建入口 make test bundle，产物在仓库 dist/。配置见 ../../docs/07-AI配置.md。
+
 # homework-server · NAS 服务
 
 Go + SQLite，单二进制，只监听局域网。协议以 [`spec/openapi.yaml`](../../spec/openapi.yaml) 为唯一真源。

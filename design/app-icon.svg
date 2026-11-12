@@ -1,36 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <defs>
-    <linearGradient id="board" x1="0" y1="0" x2="0.6" y2="1">
-      <stop offset="0" stop-color="#35684E"/>
-      <stop offset="0.55" stop-color="#2A5440"/>
-      <stop offset="1" stop-color="#1F4030"/>
-    </linearGradient>
-    <linearGradient id="chalk" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#E2E9F0"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.28" cy="0.2" r="0.8">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.10"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-
-  <!-- 黑板底 -->
-  <rect x="0" y="0" width="1024" height="1024" rx="228" fill="url(#board)"/>
-  <rect x="0" y="0" width="1024" height="1024" rx="228" fill="url(#glow)"/>
-
-  <!-- 田字格：外框 -->
-  <rect x="212" y="212" width="600" height="600" rx="24"
-        fill="none" stroke="#F2F5F8" stroke-width="26" stroke-opacity="0.94"/>
-  <!-- 中竖 -->
-  <line x1="512" y1="212" x2="512" y2="812"
-        stroke="#F2F5F8" stroke-width="26" stroke-opacity="0.94" stroke-linecap="round"/>
-  <!-- 中横 -->
-  <line x1="212" y1="512" x2="812" y2="512"
-        stroke="#F2F5F8" stroke-width="26" stroke-opacity="0.94" stroke-linecap="round"/>
-
-  <!-- 右下格里的红勾：写完了 -->
-  <path d="M596 664 L646 716 L736 606"
-        fill="none" stroke="#E4574F" stroke-width="40"
-        stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="1024" height="1024" rx="216" fill="#3E7A5E"/>
+  <g fill="none" stroke="#F2F5F8" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="240" y="240" width="544" height="544" rx="12"/>
+    <path d="M512 240 V784 M240 512 H784"/>
+  </g>
+  <path d="M602 660 L656 714 L740 610" fill="none" stroke="#D9544D" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

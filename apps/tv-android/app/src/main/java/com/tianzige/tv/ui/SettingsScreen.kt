@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.tv.material3.Text
+import androidx.compose.material3.Text
 import com.tianzige.tv.domain.SettingsPad
 import com.tianzige.tv.ui.components.TvFocusable
 import com.tianzige.tv.ui.theme.BgBase

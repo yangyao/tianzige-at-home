@@ -16,7 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.tv.material3.Text
+import androidx.compose.material3.Text
 import com.tianzige.tv.domain.DayLogic
 import com.tianzige.tv.domain.DayState
 import com.tianzige.tv.ui.components.Chip
@@ -30,13 +30,9 @@ import com.tianzige.tv.ui.theme.TextSecondary
 import com.tianzige.tv.ui.theme.Warn
 import com.tianzige.tv.vm.HomeUiState
 
-/**
- * 首屏 = 今天的作业。
- * 标题区 / 本周日期条 / 左图右文 / 底部键位提示，四段一条竖线排下来。
- * 内容区不参与焦点，整个 App 同一时刻只有一个焦点（DESIGN.md §6）。
- */
+/** 首屏展示当天全部学科；日期与照片参与原生焦点导航，屏幕不常驻操作说明。 */
 @Composable
-fun HomeScreen(state: HomeUiState) {
+fun HomeScreen(state: HomeUiState, vm: com.tianzige.tv.vm.HomeViewModel) {
     val dims = LocalTz.current.dimens
     val cardFocus = remember { FocusRequester() }
 
@@ -52,10 +48,9 @@ fun HomeScreen(state: HomeUiState) {
     ) {
         TopBar(state)
         Spacer(Modifier.height(dims.dp(26f)))
-        DateStrip(state = state, selectedRequester = cardFocus)
+        DateStrip(state = state, selectedRequester = cardFocus, onSelectDate = vm::selectDate)
         Spacer(Modifier.height(dims.dp(30f)))
-        Content(state = state, modifier = Modifier.weight(1f))
-        Footer(dayState = state.dayState())
+        Content(state = state, vm = vm, modifier = Modifier.weight(1f).padding(bottom = dims.dp(48f)))
     }
 }
 
@@ -66,7 +61,7 @@ private fun TopBar(state: HomeUiState) {
     val date = state.selectedDate
     val key = DayLogic.format(date)
     val serverDay = state.day?.takeIf { it.date == key }
-    val isToday = serverDay?.isToday ?: (date == state.today)
+    val isToday = date == state.today
     val chip = DayLogic.relativeChip(serverDay?.daysAgo)
 
     Row(
@@ -89,55 +84,21 @@ private fun TopBar(state: HomeUiState) {
             maxLines = 1,
         )
         Spacer(Modifier.weight(1f))
-        if (chip != null) {
-            Chip(text = chip, color = Flower)
-            Spacer(Modifier.width(dims.dp(18f)))
-        }
-        SyncChip(state)
-    }
-}
 
-/** 「已同步 17:42」/「上次更新 17:42」——断网时必须让孩子知道画面是旧的。 */
-@Composable
-private fun SyncChip(state: HomeUiState) {
-    val updatedAt = state.updatedAt ?: return
-    if (state.stale) {
-        Chip(text = "上次更新 $updatedAt", color = Warn)
-    } else {
-        Chip(text = "已同步 $updatedAt", color = TextSecondary)
     }
 }
 
 @Composable
-private fun Content(state: HomeUiState, modifier: Modifier) {
+private fun Content(state: HomeUiState, vm: com.tianzige.tv.vm.HomeViewModel, modifier: Modifier) {
     val day = state.day
     Box(modifier = modifier.fillMaxWidth()) {
         when {
             day == null && state.dayLoading -> LoadingPanel()
             day == null -> ErrorPanel(state)
-            state.dayState() == DayState.EMPTY -> EmptyPanel(isToday = day.isToday)
-            state.dayState() == DayState.PENDING -> PendingPanel(day = day, imageIndex = state.imageIndex, baseUrl = state.serverUrl)
-            else -> ReadyPanel(day = day, subjectIndex = state.subjectIndex, baseUrl = state.serverUrl)
+            state.dayState() == DayState.EMPTY -> EmptyPanel(isToday = state.selectedDate == state.today)
+            state.dayState() == DayState.PENDING -> PendingPanel(day = day, imageIndex = state.imageIndex, baseUrl = state.serverUrl, vm = vm)
+            else -> ReadyPanel(day = day, baseUrl = state.serverUrl, vm = vm)
         }
-    }
-}
-
-@Composable
-private fun Footer(dayState: DayState) {
-    val dims = LocalTz.current.dimens
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(dims.dp(66f)),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(dims.dp(36f)),
-    ) {
-        KeyHint(listOf("←", "→"), "换日期")
-        KeyHint(listOf("↑", "↓"), if (dayState == DayState.PENDING) "换图" else "换科目")
-        KeyHint(listOf("OK"), "看大图")
-        KeyHint(listOf("返回"), "退出")
-        Spacer(Modifier.weight(1f))
-        KeyHint(listOf("菜单"), "设置")
     }
 }
 
@@ -158,13 +119,13 @@ private fun ErrorPanel(state: HomeUiState) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("连不上服务端", style = tz.type.h1, color = TextPrimary)
+        Text("连不上家里", style = tz.type.h1, color = TextPrimary)
         Spacer(Modifier.height(dims.dp(20f)))
         Text(text = state.fatalError ?: "网络好像不通", style = tz.type.body, color = TextSecondary)
         Spacer(Modifier.height(dims.dp(10f)))
         Text(text = state.serverUrl, style = tz.type.caption, color = TextDim)
         Spacer(Modifier.height(dims.dp(32f)))
-        Text("按 OK 修改服务端地址", style = tz.type.caption, color = Accent)
+        Text("检查连接", style = tz.type.body, color = Accent)
     }
 }
 
@@ -179,6 +140,6 @@ private fun EmptyPanel(isToday: Boolean) {
     ) {
         Text(text = DayLogic.emptyTitle(isToday), style = tz.type.display, color = TextDim)
         Spacer(Modifier.height(dims.dp(26f)))
-        Text(text = "老师发出来之后，这里会自己出现", style = tz.type.h2, color = TextSecondary)
+
     }
 }

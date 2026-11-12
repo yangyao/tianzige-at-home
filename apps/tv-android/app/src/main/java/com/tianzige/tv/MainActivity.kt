@@ -6,6 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import com.tianzige.tv.ui.TvRoot
 import com.tianzige.tv.ui.theme.TzTheme
 import com.tianzige.tv.vm.HomeViewModel
@@ -16,6 +22,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (isActive) {
+                    delay(4000L)
+                    viewModel.refreshIfNeeded(backgroundPoll = true)
+                }
+            }
+        }
         setContent {
             TzTheme {
                 val state by viewModel.state.collectAsStateWithLifecycle()

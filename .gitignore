@@ -6,6 +6,7 @@
 # Xcode
 build/
 DerivedData/
+build-simulator/
 *.xcuserstate
 xcuserdata/
 *.xcscmblueprint
@@ -28,9 +29,13 @@ local.properties
 capture/
 
 # 数据（绝不入库）
+**/.private/
+*.env
+!*.env.example
 *.db
 *.sqlite
-data/
+/data/
+**/runtime-data/
 *.jpg
 *.jpeg
 *.png
@@ -40,3 +45,21 @@ data/
 .idea/
 .vscode/
 *.iml
+
+# Local tooling and reproducible build artifacts
+.serena/
+__pycache__/
+*.pyc
+dist/
+apps/upload-mac/*.xcodeproj/
+apps/upload-ios/*.xcodeproj/
+
+# Product artwork is source material, not uploaded homework.
+!design/concepts/**/*.png
+!design/icons/*.png
+!apps/upload-ios/Tianzige/Assets.xcassets/**/*.png
+!apps/upload-mac/Assets.xcassets/**/*.png
+!apps/upload-web/assets/*.png
+
+# Curated screenshots for the public README.
+!docs/screenshots/*.png

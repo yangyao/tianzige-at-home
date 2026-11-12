@@ -38,6 +38,7 @@ final class UploadStore: ObservableObject {
     @Published var date: Date = Date()
 
     @Published private(set) var isUploading = false
+    @Published private(set) var preparationCount = 0
     /// 非空 = 上次失败，按钮变红，图片保留。
     @Published private(set) var failureMessage: String?
     /// 上传区下面那行红字（超 6 张、打不开、格式不支持）。
@@ -51,7 +52,13 @@ final class UploadStore: ObservableObject {
     private var healthTask: Task<Void, Never>?
     private var toastTask: Task<Void, Never>?
 
-    private init() {}
+    private init() {
+        let saved = UserDefaults.standard.string(forKey: DefaultsKey.nasBaseURL) ?? ""
+        if saved.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            APIClient.normalizedBase(saved)?.absoluteString == "http://nas.local:8080" {
+            UserDefaults.standard.set(APIClient.defaultBase, forKey: DefaultsKey.nasBaseURL)
+        }
+    }
 
     // MARK: - 计算属性（给视图用）
 
@@ -76,9 +83,10 @@ final class UploadStore: ObservableObject {
 
     var submitTitle: String {
         if isUploading { return "上传中…" }
+        if preparationCount > 0 { return "正在整理照片…" }
         if didFail { return "没传上去，点这里重试" }
         if images.isEmpty { return "上传" }
-        return "上传（\(images.count) 张）"
+        return "上传 \(images.count) 张"
     }
 
     /// 日期行右边那句「今天 / 昨天 / 11月10日」
@@ -91,7 +99,7 @@ final class UploadStore: ObservableObject {
     // MARK: - 加图 / 删图
 
     func add(sources: [ImageSource]) {
-        guard !sources.isEmpty else { return }
+        guard !isUploading, !sources.isEmpty else { return }
         limitMessage = nil
         failureMessage = nil
 
@@ -104,7 +112,9 @@ final class UploadStore: ObservableObject {
         let accepted = Array(sources.prefix(room))
         let overflow = sources.count - accepted.count
 
+        preparationCount += 1
         Task {
+            defer { preparationCount -= 1 }
             // 解码 + 缩放 + 编码放到后台，窗口不卡。PreparedImage 是纯数据，跨线程安全。
             let prepared = await Task.detached(priority: .userInitiated) { () -> [PreparedImage] in
                 accepted.compactMap { source in
@@ -170,7 +180,7 @@ final class UploadStore: ObservableObject {
     // MARK: - 上传
 
     func submit() {
-        guard !isUploading, !images.isEmpty else { return }
+        guard !isUploading, preparationCount == 0, !images.isEmpty else { return }
         guard let base = APIClient.normalizedBase(baseURLString) else {
             failureMessage = IngestError.badAddress.userMessage
             return

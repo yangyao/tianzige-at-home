@@ -49,7 +49,7 @@ struct SettingsView: View {
                     .font(Fonts.caption)
             }
 
-            Text("填家里 NAS 的地址。电脑和电视要在同一个 Wi-Fi 下。")
+            Text("已预设家里的 NAS 地址，需要时可修改。")
                 .font(Fonts.hint)
                 .foregroundStyle(Theme.textDim)
                 .fixedSize(horizontal: false, vertical: true)

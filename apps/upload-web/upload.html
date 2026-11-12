@@ -29,9 +29,16 @@
   button, input, textarea { font-family:inherit; }
   .wrap { max-width:720px; margin:0 auto; padding:22px 20px 132px; }
 
+  .upload-title { font-size:28px; line-height:1.35; margin:28px 0 8px; }
+  .upload-subtitle { color:var(--text2); margin-bottom:24px; }
+  .submit p { text-align:center; color:var(--text2); font-size:13px; margin:10px 0 0; }
+  button:focus-visible, [role=button]:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+  @media(max-width:460px) { header .kind { display:none; } header h1 { font-size:20px; } header .date { font-size:12px; } }
+
   /* ---------- 顶栏 ---------- */
-  header { display:flex; align-items:baseline; gap:10px; margin-bottom:18px; }
-  header h1 { font-size:var(--f-title); font-weight:700; letter-spacing:.4px; }
+  header { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  header img { flex:0 0 auto; }
+  header h1 { font-size:var(--f-title); font-weight:700; letter-spacing:.4px; white-space:nowrap; flex-shrink:0; }
   header .kind { font-size:var(--f-cap); color:var(--dim); }
   header .date { margin-left:auto; font-size:var(--f-cap); color:var(--dim); white-space:nowrap; }
 
@@ -81,7 +88,7 @@
   .thumbs { display:none; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
   .thumbs.on { display:grid; }
   .thumb { position:relative; aspect-ratio:1/1; border-radius:var(--r-md); overflow:hidden; background:var(--raised); }
-  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb img { width:100%; height:100%; object-fit:contain; display:block; }
   .thumb .x {
     position:absolute; top:5px; right:5px; width:26px; height:26px; border-radius:var(--r-full);
     background:rgba(0,0,0,.62); color:#fff; border:0; font-size:16px; line-height:26px;
@@ -107,19 +114,23 @@
   .row { display:flex; gap:10px; margin-top:12px; }
   .row .item {
     flex:1; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md);
-    padding:10px 14px; display:flex; align-items:center; gap:10px;
+    padding:10px 14px; display:flex; align-items:center; gap:12px; min-width:0;
   }
-  .row .item span { font-size:var(--f-cap); color:var(--text2); white-space:nowrap; }
+  .row .item label, .row .item span {
+    flex:0 0 auto; white-space:nowrap; font-size:var(--f-cap); line-height:1.4; color:var(--text2);
+  }
   .row .item input {
     border:0; background:transparent; font-size:var(--f-body); color:var(--text);
-    outline:none; width:100%; color-scheme:dark;
+    outline:none; flex:1 1 0; width:0; min-width:0; max-width:100%; min-height:28px;
+    text-align:right; color-scheme:dark;
   }
+  .row .item input::-webkit-date-and-time-value { text-align:right; }
 
   /* ---------- 主按钮 ---------- */
   .submit {
     position:fixed; left:0; right:0; bottom:0; z-index:40;
     padding:14px 20px calc(14px + env(safe-area-inset-bottom));
-    background:linear-gradient(transparent, var(--bg) 36%);
+    background:var(--bg); border-top:1px solid var(--line);
   }
   .submit button {
     position:relative; overflow:hidden;
@@ -197,6 +208,32 @@
   }
   .sethint { font-size:var(--f-min); color:var(--dim); margin-top:8px; line-height:1.7; }
 
+  /* ---------- AI provider settings ---------- */
+  .settings.ai-settings summary { font-size:15px; color:var(--text2); padding:6px 0; }
+  .ai-form { margin-top:16px; }
+  .ai-form fieldset { border:0; min-width:0; }
+  .ai-field { margin:0 0 16px; min-width:0; }
+  .ai-field > label { display:block; margin-bottom:7px; font-size:13px; color:var(--text2); }
+  .ai-field input, .ai-field select {
+    display:block; width:100%; min-width:0; padding:11px 12px; border:1px solid var(--line);
+    border-radius:var(--r-sm); background:var(--surface); color:var(--text); font:inherit;
+  }
+  .ai-field input, .ai-field select { font-size:16px; }
+  .ai-settings .sethint { color:var(--text2); }
+  .ai-field input:focus, .ai-field select:focus { outline:2px solid var(--accent); outline-offset:2px; }
+  .ai-check { display:flex; min-height:44px; align-items:center; gap:8px; font-size:13px; color:var(--text2); margin-bottom:16px; }
+  .settings .ai-check input { flex:0 0 18px; width:18px; height:18px; min-width:18px; margin:0; padding:0; }
+  .ai-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:18px; }
+  .ai-actions button {
+    flex:1 1 120px; padding:12px 16px; border:1px solid var(--line); border-radius:var(--r-sm);
+    background:var(--raised); color:var(--text); font:inherit; cursor:pointer; white-space:nowrap;
+  }
+  .ai-actions .ai-save { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+  .ai-form fieldset:disabled { opacity:.55; }
+  .ai-message { min-height:24px; margin-top:12px; color:var(--text2); font-size:13px; overflow-wrap:anywhere; }
+  .ai-message.error { color:#F3B6B2; }
+  .ai-message.success { color:#B9E3CC; }
+
   /* ---------- 演示徽章 ---------- */
   #demoBadge {
     position:fixed; left:14px; bottom:calc(82px + env(safe-area-inset-bottom)); z-index:70; display:none;
@@ -216,6 +253,7 @@
 
 <div class="wrap">
   <header>
+    <img src="assets/brand.png" width="36" height="36" alt="">
     <h1>家里的田字格</h1>
     <span class="kind">作业上传</span>
     <span class="date" id="todayTxt"></span>
@@ -223,9 +261,11 @@
 
   <div class="errbar" id="errbar"></div>
 
-  <div class="drop" id="drop">
+  <h2 class="upload-title">把作业照片放进来</h2>
+  <p class="upload-subtitle">截图粘贴，传完就能离开</p>
+  <div class="drop" id="drop" role="button" tabindex="0" aria-label="选择作业照片">
     <div class="ic">+</div>
-    <div class="t1">把作业照片放进来</div>
+    <div class="t1">选择图片，或拖到这里</div>
     <div class="t2">
       截图后按 <kbd>⌘</kbd> <kbd>V</kbd> 直接粘贴，可以贴多张<br>
       也可以把图片拖进来，或点这里选择
@@ -237,18 +277,55 @@
   <div class="hintbar" id="hintbar"></div>
 
   <div class="field">
-    <label>老师说的话（可不填）</label>
-    <textarea id="note" placeholder="比如：今天作业在黑板上了，数学要带尺子" maxlength="500"></textarea>
+    <label for="note">老师的话（选填）</label>
+    <textarea id="note" placeholder="可以粘贴老师的补充说明" maxlength="500"></textarea>
   </div>
 
   <div class="row">
-    <div class="item"><span>日期</span><input type="date" id="date"></div>
+    <div class="item"><label for="date">作业日期</label><input type="date" id="date"></div>
   </div>
 
   <div class="recent">
     <div class="h"><span>最近上传</span><button class="rf" id="refreshBtn" type="button">刷新</button></div>
     <div id="tasks"><div class="emptyline">还没有上传过</div></div>
   </div>
+
+  <details class="settings ai-settings" id="aiSettings">
+    <summary>AI 服务设置</summary>
+    <form id="aiForm" class="ai-form" autocomplete="off">
+      <fieldset id="aiFields">
+        <div class="ai-field">
+          <label for="aiProfile">服务类型</label>
+          <select id="aiProfile">
+            <option value="openai">OpenAI 兼容</option>
+            <option value="zai">Z.AI / GLM</option>
+          </select>
+        </div>
+        <div class="ai-field">
+          <label for="aiBase">API 地址</label>
+          <input id="aiBase" type="url" required placeholder="https://example.com/v1" spellcheck="false" autocomplete="off">
+          <p class="sethint">填写兼容接口的基础地址，也可以粘贴完整的 /chat/completions 地址。</p>
+        </div>
+        <div class="ai-field">
+          <label for="aiModel">模型名称</label>
+          <input id="aiModel" type="text" required maxlength="200" placeholder="填写支持图片输入的模型" spellcheck="false" autocomplete="off">
+          <p class="sethint">同一个模型用于识别照片和整理作业，需要支持图片输入。</p>
+        </div>
+        <div class="ai-field">
+          <label for="aiKey">API 密钥</label>
+          <input id="aiKey" type="password" maxlength="4096" placeholder="填写服务商提供的密钥" autocomplete="new-password" spellcheck="false">
+          <p class="sethint" id="aiKeyHelp">密钥只保存在 NAS，保存后不回显到网页。</p>
+        </div>
+        <label class="ai-check"><input id="aiNoAuth" type="checkbox">此服务无需密钥（本地模型）</label>
+        <div class="ai-actions">
+          <button id="aiTest" type="button">测试连接</button>
+          <button class="ai-save" type="submit">保存并应用</button>
+        </div>
+        <p class="sethint">测试会发送一张小图片，可能消耗少量额度；不会修改已保存的设置。保存后新任务立即使用新配置。</p>
+      </fieldset>
+      <p id="aiMessage" class="ai-message" role="status" aria-live="polite"></p>
+    </form>
+  </details>
 
   <details class="settings" id="settings">
     <summary>服务地址</summary>
@@ -260,8 +337,8 @@
   </details>
 </div>
 
-<div class="submit"><button id="send" type="button" disabled>上传</button></div>
-<div id="toast"><span class="ck">✓</span><span id="toastTxt"></span></div>
+<div class="submit"><button id="send" type="button" disabled>上传</button><p>收到图片后就能离开，不用等识别</p></div>
+<div id="toast" role="status" aria-live="polite"><span class="ck">✓</span><span id="toastTxt"></span></div>
 <div id="demoBadge">演示数据</div>
 
 <script>
@@ -283,7 +360,6 @@
   var hintTimer = null;
   var base = '';
   var mock = /[?&]mock=1/.test(location.search);
-  var mockAuto = false;
 
   try { base = localStorage.getItem(BASE_KEY) || ''; } catch (e) { base = ''; }
   base = normalizeBase(base);
@@ -439,6 +515,9 @@
 
   /* 三个入口：点选 / 拖拽 / 粘贴 */
   dropEl.onclick = function () { fileEl.click(); };
+  dropEl.onkeydown = function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileEl.click(); }
+  };
   fileEl.onchange = function () { addFiles(fileEl.files); fileEl.value = ''; };
 
   ['dragenter', 'dragover'].forEach(function (ev) {
@@ -715,12 +794,6 @@
       batches = (d && d.batches) || [];
       paintFrom(batches, silent);
     }).catch(function (err) {
-      if (!mock && location.protocol === 'file:') {
-        enableMock();
-        batches = mockBatches;
-        paintFrom(batches, silent);
-        return;
-      }
       clearTimeout(pollTimer);
       tasksEl.textContent = '';
       var e = document.createElement('div');
@@ -766,15 +839,114 @@
     loadList();
   };
 
+  /* ================= AI provider ================= */
+  var aiPanel = document.getElementById('aiSettings');
+  var aiForm = document.getElementById('aiForm');
+  var aiFields = document.getElementById('aiFields');
+  var aiProfile = document.getElementById('aiProfile');
+  var aiBase = document.getElementById('aiBase');
+  var aiModel = document.getElementById('aiModel');
+  var aiKey = document.getElementById('aiKey');
+  var aiNoAuth = document.getElementById('aiNoAuth');
+  var aiMessage = document.getElementById('aiMessage');
+  var aiLoaded = false;
+  var aiSaved = null;
+
+  function aiNotice(text, kind) {
+    aiMessage.textContent = text;
+    aiMessage.className = 'ai-message' + (kind ? ' ' + kind : '');
+  }
+
+  function aiKeyHint() {
+    var same = aiSaved && aiSaved.has_api_key &&
+      aiBase.value.trim().replace(/\/+$/, '') === aiSaved.base_url.replace(/\/+$/, '');
+    aiKey.disabled = aiNoAuth.checked;
+    aiKey.placeholder = aiNoAuth.checked ? '此服务无需密钥' : same ? '已保存，留空保持不变' : '填写服务商提供的密钥';
+    document.getElementById('aiKeyHelp').textContent = aiNoAuth.checked ?
+      '仅适用于未启用密钥的本地服务。' :
+      same ? '密钥已保存且不会回显；留空保持不变，更换 API 地址后需重新填写。' :
+      '密钥只保存在 NAS，保存后不回显到网页。';
+  }
+
+  function aiFill(saved) {
+    aiSaved = saved;
+    aiProfile.value = saved.profile === 'zai' ? 'zai' : 'openai';
+    aiBase.value = saved.base_url || '';
+    aiModel.value = saved.model || '';
+    aiKey.value = '';
+    aiNoAuth.checked = !!saved.no_auth;
+    aiKeyHint();
+  }
+
+  function aiRequest(method, path, body) {
+    return new Promise(function (resolve, reject) {
+      var x = new XMLHttpRequest();
+      x.open(method, api(path), true);
+      x.timeout = 75000;
+      if (body) x.setRequestHeader('Content-Type', 'application/json');
+      x.onload = function () {
+        var d;
+        try { d = JSON.parse(x.responseText); } catch (e) { reject(new Error('服务返回的内容看不懂')); return; }
+        if (x.status >= 200 && x.status < 300) resolve(d);
+        else reject(new Error(d.error && d.error.message ? d.error.message : 'AI 设置请求没有完成'));
+      };
+      x.onerror = function () { reject(new Error('连不上 NAS，设置没有保存')); };
+      x.ontimeout = function () { reject(new Error('等待服务回应超时，请稍后重试')); };
+      x.send(body ? JSON.stringify(body) : null);
+    });
+  }
+
+  aiPanel.addEventListener('toggle', function () {
+    if (!aiPanel.open || aiLoaded) return;
+    if (mock) { aiFields.disabled = true; aiNotice('演示模式不读取或修改真实 AI 设置'); return; }
+    try {
+      if (location.protocol === 'file:' || new URL(api('/api/settings/ai'), location.href).origin !== location.origin) {
+        aiFields.disabled = true; aiNotice('请直接打开 NAS 的上传页，再设置 AI 服务。', 'error'); return;
+      }
+    } catch (e) { aiFields.disabled = true; aiNotice('请先检查 NAS 服务地址。', 'error'); return; }
+    aiFields.disabled = true;
+    aiNotice('正在读取设置…');
+    aiRequest('GET', '/api/settings/ai').then(function (d) {
+      aiFill(d); aiLoaded = true; aiNotice('');
+    }).catch(function (err) { aiNotice(err.message, 'error'); })
+      .then(function () { aiFields.disabled = false; });
+  });
+
+  aiProfile.onchange = function () {
+    aiKey.value = '';
+    aiNoAuth.checked = false;
+    if (aiProfile.value === 'zai') {
+      aiBase.value = 'https://api.z.ai/api/coding/paas/v4';
+      aiModel.value = 'glm-5.3-flash';
+    } else {
+      aiBase.value = '';
+      aiModel.value = '';
+    }
+    aiKeyHint(); aiNotice('');
+  };
+  aiBase.oninput = aiKeyHint;
+  aiNoAuth.onchange = function () { if (aiNoAuth.checked) aiKey.value = ''; aiKeyHint(); };
+
+  function aiSubmit(test) {
+    if (!aiForm.reportValidity() || aiFields.disabled || mock) return;
+    var payload = {profile:aiProfile.value, base_url:aiBase.value.trim(), model:aiModel.value.trim(),
+      api_key:aiKey.value, no_auth:aiNoAuth.checked};
+    aiFields.disabled = true;
+    aiNotice(test ? '正在测试图片请求…' : '正在保存设置…');
+    aiRequest(test ? 'POST' : 'PUT', test ? '/api/settings/ai/test' : '/api/settings/ai', payload)
+      .then(function (d) {
+        if (test) aiNotice(d.message, 'success');
+        else { aiFill(d); aiNotice('已保存。新的识别任务会立即使用这组配置。', 'success'); }
+      })
+      .catch(function (err) { aiNotice(err.message, 'error'); })
+      .then(function () { aiFields.disabled = false; aiKeyHint(); });
+  }
+  document.getElementById('aiTest').onclick = function () { aiSubmit(true); };
+  aiForm.onsubmit = function (e) { e.preventDefault(); aiSubmit(false); };
+
   /* ================= Mock ================= */
   var mockBatches = seedBatches();
 
-  function enableMock() {
-    if (mock) return;
-    mock = true;
-    mockAuto = true;
-    demoBadge.classList.add('on');
-  }
 
   function iso(ts) {
     var d = new Date(ts);
@@ -843,11 +1015,11 @@
 
   /* ================= 启动 ================= */
   if (mock) {
-    mockAuto = false;
     demoBadge.classList.add('on');
   }
   paint();
   loadList();
+  if (location.hash === '#aiSettings') aiPanel.open = true;
 })();
 </script>
 </body>

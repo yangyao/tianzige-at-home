@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/yangyao/tianzige-at-home/homework-server/internal/aiconfig"
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/pipeline"
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/store"
 )
@@ -32,6 +33,7 @@ type Server struct {
 	version string
 	logger  *log.Logger
 	ocr     func() string
+	ai      *aiconfig.Manager
 }
 
 // New 构造 HTTP handler。
@@ -54,7 +56,13 @@ func (s *Server) SetOCRStatus(f func() string) {
 	}
 }
 
+func (s *Server) SetAI(manager *aiconfig.Manager) { s.ai = manager }
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/settings/ai" || r.URL.Path == "/api/settings/ai/test" {
+		s.handleAI(w, r)
+		return
+	}
 	setCORS(w)
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
@@ -153,6 +161,10 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 交给 FileServer 做目录索引与路径清理；webDir 是用户显式指定的目录。
+	if r.URL.Path == "/" {
+		http.Redirect(w, r, "upload.html", http.StatusFound)
+		return
+	}
 	http.FileServer(http.Dir(s.webDir)).ServeHTTP(w, r)
 }
 

@@ -5,7 +5,7 @@ import Foundation
 struct APIClient {
     let baseURL: URL
 
-    static let defaultBase = "http://nas.local:8080"
+    static let defaultBase = "http://192.168.2.196:18086"
     /// 上传端铁律：请求超时 30s，超时按失败处理。
     static let ingestTimeout: TimeInterval = 30
 

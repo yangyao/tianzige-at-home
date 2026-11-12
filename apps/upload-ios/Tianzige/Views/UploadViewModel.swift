@@ -54,7 +54,7 @@ final class UploadViewModel: ObservableObject {
 
     /// 相册 / 拍照 / 剪贴板最终都汇到这里。传入未压缩的原始数据。
     func addImages(from dataList: [Data]) async {
-        guard !dataList.isEmpty else { return }
+        guard phase != .uploading, !isCompressing, !dataList.isEmpty else { return }
 
         let slots = remainingSlots
         guard slots > 0 else {

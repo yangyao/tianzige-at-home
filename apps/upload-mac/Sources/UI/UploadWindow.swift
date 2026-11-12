@@ -9,6 +9,9 @@ struct UploadWindow: View {
 
     @State private var isDropTargeted = false
     @State private var showImporter = false
+    @AppStorage(DefaultsKey.lastUploadCount) private var lastCount = 0
+    @AppStorage(DefaultsKey.lastUploadAt) private var lastAt = 0.0
+    @AppStorage(DefaultsKey.lastUploadDuplicate) private var lastDuplicate = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -26,9 +29,15 @@ struct UploadWindow: View {
                 if !store.images.isEmpty {
                     thumbnailStrip
                 }
-                noteField
                 dateRow
+                noteField
+                Spacer(minLength: Space.s3)
                 submitButton
+                Text("收到图片后就能离开，不用等识别")
+                    .font(Fonts.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .padding(.top, Space.s2)
+                receipt
             }
             .padding(.horizontal, Space.s5)
             .padding(.top, Space.s4)
@@ -38,8 +47,9 @@ struct UploadWindow: View {
                 toastView(toast)
             }
         }
-        .frame(width: 460, height: 520)
+        .frame(width: 560, height: 700)
         .background(Theme.bgBase)
+        .disabled(store.isUploading)
         .onDrop(
             of: [UTType.fileURL, UTType.image],
             delegate: ImageDropDelegate(store: store, isTargeted: $isDropTargeted)
@@ -63,14 +73,18 @@ struct UploadWindow: View {
 
     private var header: some View {
         HStack(spacing: Space.s2) {
-            GridGlyph(side: 22, color: Theme.accent)
+            Image("BrandMark")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 44, height: 44)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("家里的田字格")
                     .font(Fonts.title)
                     .foregroundStyle(Theme.textPrimary)
-                Text("课后作业")
+                Text(connectionLabel)
                     .font(Fonts.caption)
-                    .foregroundStyle(Theme.textDim)
+                    .foregroundStyle(Theme.textSecondary)
             }
             Spacer(minLength: Space.s2)
             Button {
@@ -85,7 +99,34 @@ struct UploadWindow: View {
             .buttonStyle(.plain)
             .help("设置")
         }
-        .padding(.bottom, Space.s3)
+        .padding(.bottom, Space.s5)
+    }
+
+    private var connectionLabel: String {
+        switch store.health {
+        case .ok: return "家里已连接"
+        case .down: return "暂时连不上家里"
+        case .checking: return "正在连接家里…"
+        case .unknown: return "作业上传"
+        }
+    }
+
+    private var receipt: some View {
+        VStack(alignment: .leading, spacing: Space.s2) {
+            Divider().overlay(Theme.line)
+            if lastAt > 0 {
+                HStack {
+                    Text(lastDuplicate ? "最近一次：图片之前已收到" : "最近一次：收到 \(lastCount) 张")
+                    Spacer()
+                    Text(Date(timeIntervalSince1970: lastAt), style: .time)
+                }
+            } else {
+                Text("传到家里的电视，让孩子自己看作业")
+            }
+        }
+        .font(Fonts.caption)
+        .foregroundStyle(Theme.textSecondary)
+        .padding(.top, Space.s4)
     }
 
     /// 服务不通时的黄条。只在健康检查明确失败后出现，避免打开窗口时闪一下。
@@ -129,11 +170,11 @@ struct UploadWindow: View {
                 )
 
             if compact {
-                HStack(spacing: Space.s2) {
-                    Image(systemName: "plus.circle.fill")
+                VStack(spacing: Space.s2) {
+                    Image(systemName: "photo.on.rectangle")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Theme.accent)
-                    Text("再加几张")
+                    Text("继续添加作业照片")
                         .font(Fonts.body.weight(.semibold))
                         .foregroundStyle(Theme.textPrimary)
                     Text("拖进来或按 ⌘V")
@@ -142,8 +183,10 @@ struct UploadWindow: View {
                 }
             } else {
                 VStack(spacing: Space.s2) {
-                    GridGlyph(side: 36, color: isDropTargeted ? Theme.accent : Theme.textDim)
-                    Text("把作业照片放进来")
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.system(size: 30, weight: .light))
+                        .foregroundStyle(Theme.textSecondary)
+                    Text("把作业照片拖进来")
                         .font(Fonts.dropTitle)
                         .foregroundStyle(Theme.textPrimary)
                     Text("拖进来，或按 ⌘V")
@@ -158,8 +201,8 @@ struct UploadWindow: View {
         }
         .frame(
             maxWidth: .infinity,
-            minHeight: compact ? 64 : 100,
-            maxHeight: compact ? 64 : .infinity
+            minHeight: 160,
+            maxHeight: 160
         )
         .contentShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
         .onTapGesture { showImporter = true }
@@ -190,7 +233,7 @@ struct UploadWindow: View {
             }
             .padding(.horizontal, 2)
         }
-        .frame(height: 76)
+        .frame(height: 108)
         .padding(.top, Space.s2)
     }
 
@@ -198,8 +241,8 @@ struct UploadWindow: View {
         ZStack(alignment: .topTrailing) {
             Image(nsImage: image.thumbnail)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 64, height: 64)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 154, height: 96)
                 .clipShape(RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
@@ -219,7 +262,7 @@ struct UploadWindow: View {
             .padding(3)
             .help("拿掉这张")
         }
-        .frame(width: 64, height: 64)
+        .frame(width: 154, height: 96)
         .help("\(image.sourceName) · \(Int(image.pixelSize.width))×\(Int(image.pixelSize.height))")
     }
 
@@ -245,7 +288,7 @@ struct UploadWindow: View {
                     .padding(.vertical, 6)
 
                 if store.note.isEmpty {
-                    Text("比如：数学要带尺子")
+                    Text("可以粘贴老师的补充说明")
                         .font(Fonts.body)
                         .foregroundStyle(Theme.textDim)
                         .padding(.leading, 13)
@@ -260,7 +303,7 @@ struct UploadWindow: View {
 
     private var dateRow: some View {
         HStack(spacing: Space.s2) {
-            Text("日期")
+            Text("作业日期")
                 .font(Fonts.caption)
                 .foregroundStyle(Theme.textSecondary)
 
@@ -294,14 +337,14 @@ struct UploadWindow: View {
                 .font(Fonts.button)
                 .foregroundStyle(store.didFail ? Color.white : Theme.accentInk)
                 .frame(maxWidth: .infinity)
-                .frame(height: 44)
+                .frame(height: 52)
                 .background(
                     RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
                         .fill(store.didFail ? Theme.error : Theme.accent)
                 )
         }
         .buttonStyle(.plain)
-        .disabled(store.images.isEmpty || store.isUploading)
+        .disabled(store.images.isEmpty || store.isUploading || store.preparationCount > 0)
         .opacity(buttonOpacity)
         .padding(.top, Space.s3)
     }

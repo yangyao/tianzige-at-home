@@ -44,7 +44,7 @@ struct ImageSource: Sendable {
 
     init(data: Data, name: String) {
         storage = .data(data)
-        name = name
+        self.name = name
     }
 }
 

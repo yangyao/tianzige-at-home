@@ -31,7 +31,7 @@ final class WindowManager: NSObject, NSWindowDelegate {
                 .environmentObject(store)
             uploadWindow = makeWindow(
                 title: "上传作业",
-                size: NSSize(width: 460, height: 520),
+                size: NSSize(width: 560, height: 700),
                 rootView: AnyView(root)
             )
         }

@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/yangyao/tianzige-at-home/homework-server/internal/aiconfig"
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/api"
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/ocr"
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/parse"
@@ -43,9 +45,22 @@ func main() {
 
 	engine := buildOCREngine(logger)
 	parser := buildParser(logger)
-	logger.Printf("OCR 引擎: %s (%s)，分科器: %s", engine.Name(), engine.Status(), parser.Name())
 
+	base, key, model := openAIConfig()
+	profile := "openai"
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("TIANZIGE_OCR")), "zai") {
+		profile = "zai"
+		base, key, model = zaiConfig(logger)
+	}
+	ai, err := aiconfig.New(filepath.Join(st.Dir(), ".private", "ai-provider.json"),
+		aiconfig.Config{Profile: profile, BaseURL: base, Model: model, APIKey: key}, engine, parser)
+	if err != nil {
+		logger.Fatalf("AI 配置加载失败: %v", err)
+	}
+	activeEngine, activeParser := ai.Models()
+	logger.Printf("OCR 引擎: %s (%s)，分科器: %s", activeEngine.Name(), activeEngine.Status(), activeParser.Name())
 	pl := pipeline.New(st, engine, parser, logger)
+	pl.SetProvider(ai.Models)
 	pl.Start()
 
 	ctx := context.Background()
@@ -56,7 +71,8 @@ func main() {
 	}
 
 	srv := api.New(st, pl, api.Options{DataDir: *dataDir, WebDir: *webDir, Version: version}, logger)
-	srv.SetOCRStatus(engine.Status)
+	srv.SetAI(ai)
+	srv.SetOCRStatus(func() string { active, _ := ai.Models(); return active.Status() })
 
 	httpSrv := &http.Server{
 		Addr:              *addr,
@@ -91,6 +107,9 @@ func buildOCREngine(logger *log.Logger) ocr.Engine {
 	choice := strings.ToLower(strings.TrimSpace(os.Getenv("TIANZIGE_OCR")))
 	base, key, model := openAIConfig()
 	switch choice {
+	case "zai":
+		base, key, model = zaiConfig(logger)
+		return ocr.NewZAI(base, key, model)
 	case "openai":
 		return ocr.NewOpenAICompat(base, key, model)
 	case "mock":
@@ -99,10 +118,10 @@ func buildOCREngine(logger *log.Logger) ocr.Engine {
 		if base != "" && key != "" && model != "" {
 			return ocr.NewOpenAICompat(base, key, model)
 		}
-		return ocr.NewMock()
+		return ocr.NewUnconfigured()
 	default:
-		logger.Printf("未知的 TIANZIGE_OCR=%q，回退到 mock", choice)
-		return ocr.NewMock()
+		logger.Printf("未知的 TIANZIGE_OCR=%q，保留原图，不生成文字", choice)
+		return ocr.NewUnconfigured()
 	}
 }
 
@@ -110,6 +129,9 @@ func buildParser(logger *log.Logger) parse.Parser {
 	choice := strings.ToLower(strings.TrimSpace(os.Getenv("TIANZIGE_LLM")))
 	base, key, model := openAIConfig()
 	switch choice {
+	case "zai":
+		base, key, model = zaiConfig(logger)
+		return parse.NewZAIParser(base, key, model)
 	case "openai":
 		return parse.NewLLMParser(base, key, model)
 	case "lines":
@@ -123,6 +145,28 @@ func buildParser(logger *log.Logger) parse.Parser {
 		logger.Printf("未知的 TIANZIGE_LLM=%q，回退到 lines", choice)
 		return parse.NewLineParser()
 	}
+}
+
+func zaiConfig(logger *log.Logger) (base, key, model string) {
+	base = strings.TrimSpace(os.Getenv("Z_AI_BASE_URL"))
+	model = strings.TrimSpace(os.Getenv("Z_AI_VISION_MODEL"))
+	key = strings.TrimSpace(os.Getenv("Z_AI_API_KEY"))
+	if path := strings.TrimSpace(os.Getenv("Z_AI_API_KEY_FILE")); path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			logger.Printf("无法读取 Z.AI 密钥文件，请检查配置")
+			key = ""
+		} else {
+			key = strings.TrimSpace(string(data))
+		}
+	}
+	if base == "" {
+		base = "https://api.z.ai/api/coding/paas/v4"
+	}
+	if model == "" {
+		model = "glm-5.3-flash"
+	}
+	return
 }
 
 func openAIConfig() (base, key, model string) {

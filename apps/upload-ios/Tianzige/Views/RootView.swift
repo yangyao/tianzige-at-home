@@ -46,6 +46,7 @@ struct RootView: View {
                     }
             }
         }
+        .disabled(viewModel.phase == .uploading)
         .animation(.easeOut(duration: 0.2), value: viewModel.toast)
         .sheet(isPresented: $showsSettings) {
             SettingsView()
@@ -70,6 +71,13 @@ struct RootView: View {
         .task {
             await viewModel.checkHealth()
             viewModel.refreshClipboardHint()
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["TIANZIGE_LAYOUT_PHOTO"] == "1",
+               let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+               let data = try? Data(contentsOf: documents.appendingPathComponent("layout-check.jpg")) {
+                await viewModel.addImages(from: [data])
+            }
+            #endif
         }
         .onChange(of: settings.baseURLString) { _ in
             viewModel.scheduleHealthCheck()
@@ -87,11 +95,16 @@ struct RootView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
+            Image("BrandMark")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 36, height: 36)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("家里的田字格")
                     .font(Theme.Fonts.title)
                     .foregroundColor(Theme.textPrimary)
-                Text("课后作业")
+                Text("作业上传")
                     .font(Theme.Fonts.caption)
                     .foregroundColor(Theme.textDim)
             }
@@ -160,20 +173,17 @@ struct RootView: View {
                 imageStrip
             }
 
-            noteField
             dateRow
+            Divider().overlay(Theme.line)
+            noteField
         }
     }
 
     // MARK: - 上传区
 
     private var uploadArea: some View {
-        VStack(spacing: Theme.Space.s3) {
-            Image(systemName: "square.and.arrow.up.on.square")
-                .font(.system(size: 26, weight: .light))
-                .foregroundColor(Theme.textSecondary)
-
-            VStack(spacing: Theme.Space.s1) {
+        VStack(alignment: .leading, spacing: Theme.Space.s5) {
+            VStack(alignment: .leading, spacing: Theme.Space.s2) {
                 Text("把作业照片放进来")
                     .font(Theme.Fonts.sectionTitle)
                     .foregroundColor(Theme.textPrimary)
@@ -183,7 +193,7 @@ struct RootView: View {
             }
 
             HStack(spacing: Theme.Space.s3) {
-                sourceButton(title: "相册", systemImage: "photo.on.rectangle") {
+                sourceButton(title: "从相册选", systemImage: "photo.on.rectangle") {
                     guard viewModel.remainingSlots > 0 else {
                         viewModel.inlineMessage = viewModel.tooManyImagesMessage
                         return
@@ -216,14 +226,7 @@ struct RootView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, Theme.Space.s6)
-        .padding(.horizontal, Theme.Space.s4)
-        .background(Theme.bgSurface)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous)
-                .strokeBorder(Theme.line, style: StrokeStyle(lineWidth: 1, dash: [7, 5]))
-        )
+
     }
 
     private func sourceButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
@@ -306,8 +309,9 @@ struct RootView: View {
     private func thumbnail(_ image: SelectedImage) -> some View {
         Image(uiImage: image.thumbnail)
             .resizable()
-            .aspectRatio(contentMode: .fill)
-            .frame(width: 76, height: 76)
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 136, height: 104)
+            .background(Theme.bgSurface)
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
             .overlay(alignment: .topTrailing) {
                 Button {
@@ -363,7 +367,7 @@ struct RootView: View {
                 .foregroundColor(Theme.textSecondary)
 
             TextField(
-                "比如：数学练习册 P18",
+                "可以粘贴老师的补充说明",
                 text: Binding(
                     get: { viewModel.note },
                     set: { viewModel.note = String($0.prefix(UploadViewModel.maxNoteLength)) }
@@ -393,9 +397,11 @@ struct RootView: View {
                 }
             } label: {
                 HStack(spacing: Theme.Space.s3) {
-                    Text("日期")
+                    Text("作业日期")
                         .font(Theme.Fonts.body)
                         .foregroundColor(Theme.textSecondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
 
                     Spacer()
 
@@ -405,7 +411,10 @@ struct RootView: View {
 
                     Text(DateString.apiDate(from: viewModel.selectedDate))
                         .font(Theme.Fonts.caption)
+                        .monospacedDigit()
                         .foregroundColor(Theme.textDim)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
 
                     Image(systemName: viewModel.isDatePickerExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 11, weight: .semibold))
@@ -462,7 +471,7 @@ struct RootView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
                 .background(buttonBackground)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.full, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
             }
             .buttonStyle(PressableStyle())
             .disabled(!viewModel.canUpload)
@@ -470,6 +479,11 @@ struct RootView: View {
             .padding(.horizontal, Theme.Space.s5)
             .padding(.top, Theme.Space.s3)
             .padding(.bottom, Theme.Space.s2)
+
+            Text("收到图片后就能离开，不用等识别")
+                .font(Theme.Fonts.caption)
+                .foregroundColor(Theme.textSecondary)
+                .padding(.bottom, Theme.Space.s3)
         }
         .background(Theme.bgBase.ignoresSafeArea(edges: .bottom))
     }
@@ -481,29 +495,29 @@ struct RootView: View {
         case .failed:
             return "没传上去，点这里重试"
         case .idle:
-            return "上传（\(viewModel.images.count) 张）"
+            return viewModel.images.isEmpty ? "上传照片" : "上传 \(viewModel.images.count) 张"
         }
     }
 
     private var buttonBackground: Color {
         switch viewModel.phase {
         case .uploading:
-            return Theme.accent.opacity(0.55)
+            return Theme.primaryAction.opacity(0.55)
         case .failed:
             return Theme.stateError
         case .idle:
-            return viewModel.images.isEmpty ? Theme.bgRaised : Theme.accent
+            return viewModel.images.isEmpty ? Theme.bgRaised : Theme.primaryAction
         }
     }
 
     private var buttonForeground: Color {
         switch viewModel.phase {
         case .uploading:
-            return Theme.accentInk
+            return .white
         case .failed:
             return .white
         case .idle:
-            return viewModel.images.isEmpty ? Theme.textDim : Theme.accentInk
+            return viewModel.images.isEmpty ? Theme.textDim : .white
         }
     }
 }

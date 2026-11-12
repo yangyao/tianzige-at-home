@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.tv.material3.Text
+import androidx.compose.material3.Text
 import com.tianzige.tv.ui.components.TvFocusable
 import com.tianzige.tv.ui.theme.BgSurface
 import com.tianzige.tv.ui.theme.LocalTz

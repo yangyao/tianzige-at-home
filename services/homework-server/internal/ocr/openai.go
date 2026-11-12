@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"net/http"
 	"os"
@@ -18,13 +20,16 @@ const defaultOCRPrompt = `请把这张图片里的所有文字原样转成纯文
 只输出文字，不要解释、不要总结。`
 
 // OpenAICompatEngine 调用 OpenAI 兼容的 vision chat completions 接口
-// （OpenAI、通义千问兼容模式、DeepSeek、vLLM、Ollama 等都能用）。
+// 适用于提供 Chat Completions 和 image_url 输入的云端或本地模型服务。
 type OpenAICompatEngine struct {
-	baseURL string
-	apiKey  string
-	model   string
-	client  *http.Client
-	prompt  string
+	baseURL    string
+	apiKey     string
+	model      string
+	client     *http.Client
+	prompt     string
+	name       string
+	options    map[string]any
+	allowNoKey bool
 }
 
 // NewOpenAICompat 构造远程引擎。baseURL 例如 https://api.openai.com/v1。
@@ -35,13 +40,14 @@ func NewOpenAICompat(baseURL, apiKey, model string) *OpenAICompatEngine {
 		model:   strings.TrimSpace(model),
 		client:  &http.Client{Timeout: 120 * time.Second},
 		prompt:  defaultOCRPrompt,
+		name:    "openai",
 	}
 }
 
-func (e *OpenAICompatEngine) Name() string { return "openai" }
+func (e *OpenAICompatEngine) Name() string { return e.name }
 
 func (e *OpenAICompatEngine) Status() string {
-	if e.baseURL == "" || e.apiKey == "" || e.model == "" {
+	if e.baseURL == "" || (e.apiKey == "" && !e.allowNoKey) || e.model == "" {
 		return "unconfigured"
 	}
 	return "ok"
@@ -76,6 +82,30 @@ func (e *OpenAICompatEngine) Recognize(ctx context.Context, img Image) (string, 
 	if mime == "" {
 		mime = "image/jpeg"
 	}
+	return e.recognizeData(ctx, data, mime, e.prompt)
+}
+
+// AllowNoKey explicitly enables an unauthenticated, typically local, endpoint.
+func (e *OpenAICompatEngine) AllowNoKey(allow bool) { e.allowNoKey = allow }
+
+// Probe exercises image input without storing homework or exposing the model response.
+func (e *OpenAICompatEngine) Probe(ctx context.Context) error {
+	if e.Status() != "ok" {
+		return fmt.Errorf("请先填写完整的 AI 服务配置")
+	}
+	picture := image.NewRGBA(image.Rect(0, 0, 64, 64))
+	for i := range picture.Pix {
+		picture.Pix[i] = 255
+	}
+	var encoded bytes.Buffer
+	if err := png.Encode(&encoded, picture); err != nil {
+		return err
+	}
+	_, err := e.recognizeData(ctx, encoded.Bytes(), "image/png", "这是一次图片输入连接测试，请只回复 OK。")
+	return err
+}
+
+func (e *OpenAICompatEngine) recognizeData(ctx context.Context, data []byte, mime, prompt string) (string, error) {
 	b64 := base64.StdEncoding.EncodeToString(data)
 
 	imgPart := imageURLPart{Type: "image_url"}
@@ -86,8 +116,11 @@ func (e *OpenAICompatEngine) Recognize(ctx context.Context, img Image) (string, 
 		"max_tokens":  2048,
 		"messages": []chatMessage{{
 			Role:    "user",
-			Content: []any{textPart{Type: "text", Text: e.prompt}, imgPart},
+			Content: []any{textPart{Type: "text", Text: prompt}, imgPart},
 		}},
+	}
+	for key, value := range e.options {
+		body[key] = value
 	}
 	payload, err := json.Marshal(body)
 	if err != nil {
@@ -98,7 +131,9 @@ func (e *OpenAICompatEngine) Recognize(ctx context.Context, img Image) (string, 
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+e.apiKey)
+	if e.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+e.apiKey)
+	}
 
 	resp, err := e.client.Do(req)
 	if err != nil {
@@ -113,11 +148,16 @@ func (e *OpenAICompatEngine) Recognize(ctx context.Context, img Image) (string, 
 		return "", fmt.Errorf("%w: HTTP %d", ErrUnavailable, resp.StatusCode)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("OCR 请求失败: HTTP %d: %s", resp.StatusCode, truncate(string(raw), 200))
+		message := string(raw)
+		if e.apiKey != "" {
+			message = strings.ReplaceAll(message, e.apiKey, "[已隐藏]")
+		}
+		return "", fmt.Errorf("OCR 请求失败: HTTP %d: %s", resp.StatusCode, truncate(message, 200))
 	}
 	var out struct {
 		Choices []struct {
-			Message struct {
+			FinishReason string `json:"finish_reason"`
+			Message      struct {
 				Content string `json:"content"`
 			} `json:"message"`
 		} `json:"choices"`
@@ -127,6 +167,9 @@ func (e *OpenAICompatEngine) Recognize(ctx context.Context, img Image) (string, 
 	}
 	if len(out.Choices) == 0 {
 		return "", fmt.Errorf("%w: 响应为空", ErrUnavailable)
+	}
+	if out.Choices[0].FinishReason == "length" {
+		return "", fmt.Errorf("%w: 识别结果不完整，请重试", ErrUnavailable)
 	}
 	text := strings.TrimSpace(out.Choices[0].Message.Content)
 	if text == "" {

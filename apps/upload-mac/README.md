@@ -6,8 +6,7 @@ Mac 上的**菜单栏快速投递入口**：把老师发在 QQ 群里的作业�
 - 只做上传：没有作业查看界面、没有最近列表、没有重跑 / 删除（那些是电视端和 Web 调试页的事）
 - 不做文件夹监听、定时抓取（QQ 群自动抓取在 Mac mini 上由 Codex 走 `POST /api/ingest`，是另一条路）
 
-状态：源码完成，**本仓库的写作环境是 Linux、没有 Swift 工具链**，尚未在 Xcode 里编译过。
-第一次在 Mac 上打开如果报错，优先看 [已知风险](#已知风险没编译验证过) 一节。
+状态：2026-11-12 已在本机 Xcode 27.2 完成 Debug / Release 构建、启动、连接真实 NAS 和原生窗口截图。
 
 ## 构建
 
@@ -43,7 +42,7 @@ xcodebuild -project TianzigeMac.xcodeproj -scheme TianzigeMac -configuration Rel
 - **设置…**
 - **退出**
 
-上传窗口 460 × 520：
+上传窗口 560 × 700：
 
 | 动作 | 结果 |
 |---|---|
@@ -59,7 +58,7 @@ xcodebuild -project TianzigeMac.xcodeproj -scheme TianzigeMac -configuration Rel
 失败（4xx / 5xx / 30 秒超时 / 连不上）按钮变红「没传上去，点这里重试」，图片全部保留，再点一次就重发。
 窗口顶部黄条「连不上 NAS，检查地址或网络」只在健康检查明确失败后出现。
 
-设置窗口只有两项：NAS 地址（默认 `http://nas.local:8080`，`@AppStorage` 存 UserDefaults）+「测试连接」（`GET /api/health`）。
+设置窗口只有两项：NAS 地址（默认 `http://192.168.2.196:18086`，`@AppStorage` 存 UserDefaults）+「测试连接」（`GET /api/health`）。
 地址允许只填 `192.168.1.8:8080`，会自动补 `http://`。
 
 ## 签名与首次打开（自用侧载）
@@ -82,7 +81,7 @@ xcodebuild -project TianzigeMac.xcodeproj -scheme TianzigeMac -configuration Rel
 ### 为什么窗口是自建 NSWindow
 
 App 唯一的 SwiftUI scene 是 `MenuBarExtra`。如果再加一个 `Window` scene，启动时 SwiftUI 会自动弹出那个窗口（MenuBarExtra-only App 的已知行为），而我们要的是「启动后只有菜单栏图标」。
-所以上传 / 设置窗口由 `WindowManager`（`NSWindow` + `NSHostingController`）自己管，窗口内容仍然是 SwiftUI（`UploadWindow` / `SettingsView`），固定 460×520 / 400×250，不可缩放。
+所以上传 / 设置窗口由 `WindowManager`（`NSWindow` + `NSHostingController`）自己管，窗口内容仍然是 SwiftUI（`UploadWindow` / `SettingsView`），固定 560×700 / 400×250，不可缩放。
 
 ### 菜单栏图标与 Dock
 
@@ -152,17 +151,15 @@ apps/upload-mac/
         └── Glyphs.swift        菜单栏「田」字 + 2×2 格子
 ```
 
-## 已知风险（没编译验证过）
+## 当前验证
 
-写作环境没有 macOS / Swift，下面是人工审查后仍可能第一次编译踩到的点：
+已修复图片来源初始化中的编译错误，并加入正式 AppIcon 与 BrandMark 资源。
+上传窗口使用新设计：照片预览、作业日期、老师配文、上传按钮、上次回执。
+图片整理期间禁止提交，上传中禁止修改待上传内容。
+可用 --upload 启动参数直接打开上传窗口。
 
-1. **SwiftUI 并发标注**：`UploadStore` 是 `@MainActor`，DropDelegate 里用 `Task { @MainActor in }` 跳回主线程；NSEvent 回调依赖「非 Sendable 闭包继承外层 actor」这条规则。如果 Xcode 的并发检查更严格，可能要给 `PasteMonitor.start` 的 handler 调用再包一层 `Task { @MainActor in }`。
-2. **MenuBarExtra + Canvas**：菜单栏自定义视图一般会用 `.primary` 自动反色；若在浅色菜单栏下颜色不对，改成 `NSImage(size:flipped:drawingHandler:)` 画好并设 `isTemplate = true` 即可（注释里留了思路）。
-3. **Dock 拖放**：依赖「窗口打开时切 `.regular`」，窗口关闭时 Dock 图标消失。这是为满足 `LSUIElement=true` + 「Dock 图标接受文件」两个要求做的折中。
-4. **`NSItemProvider.loadItem` 的返回类型**：Finder 拖拽可能给 `Data` 或 `NSURL`，代码两种都处理了；极端情况下某些 App 提供 file promise，会走 `loadDataRepresentation` 分支。
-5. **ATS**：`NSAllowsArbitraryLoads = true` 是给自用工具开的口子；如果要上架需要改成 `NSExceptionDomains`。
-6. **App 图标**：没有放 `Assets.xcassets`，用系统默认图标。菜单栏图标不受影响。
-7. **用 Xcode 16 / macOS 15+ SDK 编译**：AppKit 的 `@MainActor` 标注比 Xcode 15 更严，`Theme.swift` 里用 `NSColor` 动态色的静态属性可能需要整体标 `@MainActor`（或改成 `Color(red:green:blue:)` 字面量）。按本文的 Xcode 15 环境不受影响。
+仓库根目录 sh scripts/build-apple.sh 使用现有工具构建，不自动安装组件。
+产物 dist/TianzigeMac.zip 为本地 ad-hoc 签名 App。
 
 ## 协议
 

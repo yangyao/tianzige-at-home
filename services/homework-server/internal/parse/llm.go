@@ -17,14 +17,17 @@ const llmSystemPrompt = `你是小学作业整理助手。把 OCR 文本整理�
 1. subject 只能是 语文、数学、英语、科学、道法、其他 之一，判断不了就用「其他」；
 2. items 每条是一个完整可执行的作业动作，去掉题号前缀与 OCR 噪声，保留页码和题号；
 3. 不要编造原文没有的内容，没有作业的科目不要输出；
-4. 老师备注可以作为分科线索，但它不是作业内容本身。`
+4. 老师备注可以作为分科线索，但它不是作业内容本身；科目贴纸、页码标记、识别说明不是作业，不要变成条目。
+5. 题号、页码、单位和复习范围不能擅自改写；看不清的内容保留标记，不补全、不猜测。`
 
 // LLMParser 调 OpenAI 兼容 chat 接口做分科。温度 0，JSON 解析失败自动重试一次。
 type LLMParser struct {
-	baseURL string
-	apiKey  string
-	model   string
-	client  *http.Client
+	baseURL    string
+	apiKey     string
+	model      string
+	client     *http.Client
+	options    map[string]any
+	allowNoKey bool
 }
 
 // NewLLMParser 构造分科器。baseURL 例如 https://api.openai.com/v1。
@@ -37,10 +40,27 @@ func NewLLMParser(baseURL, apiKey, model string) *LLMParser {
 	}
 }
 
-func (p *LLMParser) Name() string { return "openai" }
+func NewZAIParser(baseURL, apiKey, model string) *LLMParser {
+	p := NewLLMParser(baseURL, apiKey, model)
+	p.options = map[string]any{
+		"temperature": 1,
+		"max_tokens":  16384,
+		"thinking":    map[string]string{"type": "enabled"},
+	}
+	return p
+}
+
+func (p *LLMParser) Name() string {
+	if p.options != nil {
+		return "zai"
+	}
+	return "openai"
+}
+
+func (p *LLMParser) AllowNoKey(allow bool) { p.allowNoKey = allow }
 
 func (p *LLMParser) Parse(ctx context.Context, ocrText, note string) ([]Group, error) {
-	if p.baseURL == "" || p.apiKey == "" || p.model == "" {
+	if p.baseURL == "" || (p.apiKey == "" && !p.allowNoKey) || p.model == "" {
 		return nil, fmt.Errorf("%w: 分科模型未配置", ErrUnavailable)
 	}
 	user := "老师备注：" + orNone(note) + "\n\nOCR 文本：\n" + ocrText
@@ -69,6 +89,9 @@ func (p *LLMParser) chat(ctx context.Context, user string) (string, error) {
 			{"role": "user", "content": user},
 		},
 	}
+	for key, value := range p.options {
+		body[key] = value
+	}
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return "", err
@@ -78,7 +101,9 @@ func (p *LLMParser) chat(ctx context.Context, user string) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+p.apiKey)
+	if p.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+p.apiKey)
+	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrUnavailable, err)
@@ -92,7 +117,11 @@ func (p *LLMParser) chat(ctx context.Context, user string) (string, error) {
 		return "", fmt.Errorf("%w: HTTP %d", ErrUnavailable, resp.StatusCode)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("分科请求失败: HTTP %d: %s", resp.StatusCode, truncate(string(raw), 200))
+		message := string(raw)
+		if p.apiKey != "" {
+			message = strings.ReplaceAll(message, p.apiKey, "[已隐藏]")
+		}
+		return "", fmt.Errorf("分科请求失败: HTTP %d: %s", resp.StatusCode, truncate(message, 200))
 	}
 	var out struct {
 		Choices []struct {

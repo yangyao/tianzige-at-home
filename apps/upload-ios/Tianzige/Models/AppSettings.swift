@@ -5,7 +5,7 @@ final class AppSettings: ObservableObject {
 
     static let shared = AppSettings()
 
-    static let defaultBaseURLString = "http://nas.local:8080"
+    static let defaultBaseURLString = "http://192.168.2.196:18086"
     private static let storageKey = "nas.baseURL"
 
     @Published var baseURLString: String {
@@ -16,7 +16,11 @@ final class AppSettings: ObservableObject {
 
     init() {
         let saved = UserDefaults.standard.string(forKey: Self.storageKey) ?? ""
-        baseURLString = saved.isEmpty ? Self.defaultBaseURLString : saved
+        let isLegacyDefault = Self.normalize(saved) == "http://nas.local:8080"
+        baseURLString = saved.isEmpty || isLegacyDefault ? Self.defaultBaseURLString : saved
+        if isLegacyDefault {
+            UserDefaults.standard.set(baseURLString, forKey: Self.storageKey)
+        }
     }
 
     /// 请求用的 base URL。缺协议头自动补 http://，末尾斜杠去掉。

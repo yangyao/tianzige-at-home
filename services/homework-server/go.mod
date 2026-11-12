@@ -1,6 +1,6 @@
 module github.com/yangyao/tianzige-at-home/homework-server
 
-go 1.21
+go 1.20
 
 require modernc.org/sqlite v1.29.10
 

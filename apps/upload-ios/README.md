@@ -69,4 +69,10 @@ Tianzige/
 - 没接 AppIcon 之外的动态资源；图标是从 `design/app-icon.svg` 手工栅格化的。
 - 上传用内存里的 JPEG Data（≤6 张 × ~1MB），不做断点续传——局域网内没必要。
 - 不做 Widget / Shortcuts / 推送（upload-ui.md §6 明确不做）。
-- 本仓库没有 macOS 构建机，代码未经编译器验证，对照清单见 `ProtocolTests.md`。
+- 2026-11-12：已在本机 Xcode 27.2 完成 Debug / Release 设备构建与已有 iOS 27.1 模拟器启动。iPhone 真机签名安装尚未验证。
+
+统一构建入口：在仓库根目录运行 `sh scripts/build-apple.sh`，不会下载 SDK 或模拟器。产物 `dist/Tianzige-iOS-unsigned.zip` 未签名，真机安装需在 Xcode 选择 Team。
+
+默认 NAS 地址为 `http://192.168.2.196:18086`，无需首次填写。旧默认 `nas.local:8080` 自动迁移，用户自定义地址保留。当前采用预设地址；NAS IP 改变时需修改设置，尚未实现服务发现。
+
+`sh scripts/package-ios.sh`（项目根目录执行）生成标准 Payload 结构的 IPA，可复制到 LiveContainer 后导入。

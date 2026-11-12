@@ -1,4 +1,4 @@
 # 根 .gitignore 屏蔽了所有 png（数据目录用），但设计稿导出的图标必须入库
 !app/src/main/res/drawable-nodpi/*.png
 !app/src/main/res/mipmap-mdpi/*.png
-!app/src/main/res/mipmap-xhdpi/*.png
+!app/src/main/res/mipmap-*/*.png

@@ -11,7 +11,7 @@ enum Theme {
     // MARK: - 颜色（token: color.*）
 
     /// token: color.bg.base
-    static let bgBase = Color(light: 0xF4F6F8, dark: 0x14181C)
+    static let bgBase = Color(light: 0xFAF9F6, dark: 0x14181C)
     /// token: color.bg.surface
     static let bgSurface = Color(light: 0xFFFFFF, dark: 0x1D2329)
     /// token: color.bg.raised
@@ -28,6 +28,7 @@ enum Theme {
     static let accentInk = Color(hex: 0x1A1206)
     /// token: color.brand
     static let brand = Color(hex: 0x3E7A5E)
+    static let primaryAction = Color(light: 0x326B50, dark: 0x3E7A5E)
     /// token: color.flower
     static let flower = Color(hex: 0xD9544D)
     /// token: color.state.ok
@@ -58,7 +59,7 @@ enum Theme {
         /// 主按钮：拿在手里要一眼看到，比 body 大一档、比 title 小一档
         static let button = SwiftUI.Font.system(size: 17, weight: .semibold)
         /// 上传区主文案：略大于 body，让「把作业照片放进来」先被看到
-        static let sectionTitle = SwiftUI.Font.system(size: 17, weight: .semibold)
+        static let sectionTitle = SwiftUI.Font.system(size: 26, weight: .bold)
         /// token: font.ui.caption（13 / 400）
         static let caption = SwiftUI.Font.system(size: 13, weight: .regular)
         /// token: font.ui.min（12 / 400）

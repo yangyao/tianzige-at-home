@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.lerp
-import androidx.tv.material3.Text
+import androidx.compose.material3.Text
 import com.tianzige.tv.ui.theme.Accent
 import com.tianzige.tv.ui.theme.BgRaised
 import com.tianzige.tv.ui.theme.FOCUS_GLOW_ALPHA

@@ -68,6 +68,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         NSApp.mainMenu = Self.makeMainMenu()
         WindowManager.shared.configure(store: UploadStore.shared)
+        if CommandLine.arguments.contains("--upload") {
+            WindowManager.shared.showUploadWindow()
+        }
     }
 
     /// 最小主菜单：App 菜单 + 编辑菜单。

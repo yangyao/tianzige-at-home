@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.tv.material3.Text
+import androidx.compose.material3.Text
 import coil.compose.AsyncImage
 import com.tianzige.tv.ui.theme.LocalTz
 import com.tianzige.tv.ui.theme.TextDim
@@ -81,25 +81,6 @@ fun FullscreenViewer(url: String?, scroll: ScrollState) {
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(dims.dp(88f))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.9f))
-                        )
-                    )
-                    .padding(bottom = dims.dp(12f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "↑ ↓ 滚动图片 · 返回 关闭",
-                    style = tz.type.caption,
-                    color = TextSecondary,
-                )
-            }
         }
     }
 }
