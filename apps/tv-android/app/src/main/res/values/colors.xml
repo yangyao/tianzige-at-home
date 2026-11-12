@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- color.bg.base #14181C，启动瞬间不要闪白 -->
+    <color name="bg_base">#FF14181C</color>
+</resources>

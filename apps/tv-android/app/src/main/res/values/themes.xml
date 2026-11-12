@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      只做「没有标题栏 + 深色底」两件事，所有视觉都在 Compose 里画。
+      用 framework 的 Material 主题，避免为了一个 style 引入 AppCompat。
+    -->
+    <style name="Theme.TianzigeTv" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg_base</item>
+        <item name="android:colorBackground">@color/bg_base</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
