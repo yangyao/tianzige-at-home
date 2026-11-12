@@ -107,3 +107,7 @@ NAS 当前为用户级常驻服务，尚未注册重启自动启动；自动从�
 ## 许可证
 
 代码采用 [MIT License](LICENSE)。文档中的运行截图用于说明实际界面；截图内的作业内容不作为应用内置资源分发。第三方依赖沿用各自的许可证。
+
+## 下载与发布
+
+安装包见 [GitHub Releases](https://github.com/yangyao/tianzige-at-home/releases)。推送 `v1.0.0` 这类版本 tag 后，GitHub Actions 自动构建电视、Apple 与 NAS 包，测试通过后创建 Release 并附带 SHA-256 校验值。详见 [发布版本](docs/11-发布版本.md)。

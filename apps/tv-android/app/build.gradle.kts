@@ -14,8 +14,8 @@ android {
         applicationId = "com.tianzige.tv"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.0"
+        versionCode = System.getenv("TIANZIGE_BUILD")?.toInt() ?: 2
+        versionName = System.getenv("TIANZIGE_VERSION") ?: "1.0.0"
     }
 
     buildTypes {
