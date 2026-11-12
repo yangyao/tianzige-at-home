@@ -1,0 +1,58 @@
+# XcodeGen 工程描述。改完这个文件后重新跑 `xcodegen` 即可，不要手改 .xcodeproj。
+#
+#   brew install xcodegen
+#   cd apps/upload-ios
+#   xcodegen
+#   open Tianzige.xcodeproj
+name: Tianzige
+
+options:
+  bundleIdPrefix: com.tianzige
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: true
+  xcodeVersion: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    # 家庭自用工具，不引入严格并发检查，否则 URLSession / UIImage 的旧接口会刷一屏告警
+    SWIFT_STRICT_CONCURRENCY: minimal
+
+targets:
+  Tianzige:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Tianzige
+        excludes:
+          - "App/Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: Tianzige
+        PRODUCT_BUNDLE_IDENTIFIER: com.tianzige.ios
+        INFOPLIST_FILE: Tianzige/App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        DEVELOPMENT_LANGUAGE: zh-Hans
+        SWIFT_EMIT_LOC_STRINGS: YES
+
+schemes:
+  Tianzige:
+    build:
+      targets:
+        Tianzige: all
+    run:
+      config: Debug
+    archive:
+      config: Release

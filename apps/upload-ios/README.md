@@ -1,24 +1,72 @@
 # upload-ios · 手机上传
 
-SwiftUI 原生 App。
+SwiftUI 原生 App，iOS 16+。**只做一件事：把作业照片传上去，然后走人。**
+不做查看、不做浏览、不做最近上传列表——那是电视端和 Web 端的事。
 
-## 状态
+## 构建
 
-**未开始。** 当前用 `apps/upload-web/upload.html` 在 Safari 里替代。
+本机没有 checked-in 的 `.xcodeproj`（手写 pbxproj 容易错），用 XcodeGen 生成：
 
-## 核心场景
+```bash
+brew install xcodegen
+cd apps/upload-ios
+xcodegen
+open Tianzige.xcodeproj
+```
 
-家长在微信/QQ 里截了图 → 切到本 App → 直接粘贴 → 上传 → 走人。
+在 Xcode 里：
 
-## 计划
+1. 选中 Tianzige target → Signing & Capabilities → Team 选你自己的
+   **个人免费 Apple ID 即可**（Xcode → Settings → Accounts → 添加 Apple ID）。
+   免费 ID 侧载有效期 7 天，到期重新 Run 一次就好。
+2. iPhone 用数据线连上，选为自己的运行设备，⌘R。
 
-- 主界面只有三块：图片区、备注框、上传按钮
-- 支持从剪贴板读图（`UIPasteboard.general.image`）
-- 支持相册多选、拍照
-- 上传即 POST，不做进度等待，成功只弹一条 toast
-- 底部保留「最近上传」列表（读 `GET /batches`）
-- 失败的批次可点「重新识别」（`POST /batch/{id}/rerun`）
+首次安装后要在 设置 → 通用 → VPN与设备管理 里信任你的开发者证书。
 
-## 与网页版的差别
+## 改 NAS 地址
 
-网页版已经够用的话，这个 App 的唯一价值是：**贴图少两步**（不用开浏览器、不用找网址）。所以只做这一件事，不要加功能。
+App 内点右上角 ⚙️ → 「NAS 地址」填家里 NAS 的局域网地址（如
+`http://192.168.1.20:8080`）→ 点「测试连接」，看到绿色
+「已连接 · 服务端版本 x」即生效。地址存 UserDefaults，**不填协议头会自动补 `http://`**。
+
+## 目录结构
+
+```
+Tianzige/
+├── App/            入口 + Info.plist
+├── Models/         IngestResponse / HealthResponse / AppSettings / DateString
+├── Networking/     APIClient（ingest + health）/ MultipartBody / ImageCompressor
+└── Views/          RootView（单屏）/ SettingsView / 选图器 / Theme
+```
+
+## 行为约定（与 docs/05-协议.md、design/upload-ui.md 对齐）
+
+- 只调两个接口：`POST /api/ingest` 和 `GET /api/health`。
+- **提交即走**：收到 202 立即清空表单 + toast「收到 N 张，处理完电视上就有」，
+  绝不轮询识别结果。
+- 失败 / 30s 超时：按钮变红「没传上去，点这里重试」，已选图片保留，一键重发。
+- `duplicate_of` 有值：toast「这些图片之前传过了，没有重复入库」。
+- 剪贴板：进前台时只做 `hasImages` 存在性判断（不弹系统提示），
+  用户点「添加」才真正读（此时系统会弹一次粘贴提示）。
+- 图片压缩：最长边 2048px、JPEG 0.85，HEIC 统一转 JPEG（服务端不收 heic 更稳）。
+- 日期一律按 **Asia/Shanghai** 格式化成 `YYYY-MM-DD`，默认今天，
+  可往前补传 7 天（协议 §6）。
+- 服务不通：顶部黄条「连不上 NAS，检查地址或网络」，点黄条直达设置页。
+- 深色模式跟随系统；色值/字号全部来自 `design/tokens.json`
+  （见 `Views/Theme.swift`，注释里标了 token 名）。
+
+## 权限说明（Info.plist）
+
+| 键 | 用途 |
+|---|---|
+| `NSPhotoLibraryUsageDescription` | 相册选图（实际走 PHPicker，只读选中的那张） |
+| `NSCameraUsageDescription` | 直接拍照 |
+| `NSLocalNetworkUsageDescription` | 连接局域网 NAS，iOS 14+ 会弹本地网络授权 |
+| `NSAppTransportSecurity` | NAS 是局域网 `http://`，需要放行明文（`NSAllowsLocalNetworking` + `NSAllowsArbitraryLoads`，仅限自用，不出公网） |
+
+## 已知取舍
+
+- 没接 AppIcon 之外的动态资源；图标是从 `design/app-icon.svg` 手工栅格化的。
+- 上传用内存里的 JPEG Data（≤6 张 × ~1MB），不做断点续传——局域网内没必要。
+- 不做 Widget / Shortcuts / 推送（upload-ui.md §6 明确不做）。
+- 本仓库没有 macOS 构建机，代码未经编译器验证，对照清单见 `ProtocolTests.md`。
