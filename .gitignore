@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Android
+*.apk
+*.aab
+.gradle/
+local.properties
+capture/
+
+# 数据（绝不入库）
+*.db
+*.sqlite
+data/
+*.jpg
+*.jpeg
+*.png
+*.heic
+
+# 编辑器
+.idea/
+.vscode/
+*.iml

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>上传作业</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root {
+    --bg:#f4f5f7; --card:#fff; --text:#171a20; --dim:#7c8698;
+    --line:#e2e6ed; --accent:#1f6fe0; --accent-soft:#eaf1fd;
+    --ok:#12925c; --warn:#b8761f; --err:#c0392b;
+  }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,system-ui,sans-serif;
+    font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:680px; margin:0 auto; padding:22px 18px 110px; }
+
+  header { display:flex; align-items:baseline; gap:12px; margin-bottom:16px; }
+  header h1 { font-size:22px; font-weight:700; letter-spacing:.5px; }
+  header .date { font-size:14px; color:var(--dim); margin-left:auto; white-space:nowrap; }
+
+  /* ---------- 提示条 ---------- */
+  .toast {
+    display:none; align-items:center; gap:10px; background:#e8f6ee; color:#0f7a4c;
+    border-radius:12px; padding:11px 14px; font-size:14.5px; margin-bottom:14px;
+    animation:in .2s ease;
+  }
+  .toast.on { display:flex; }
+  .toast .ck { font-size:15px; }
+  @keyframes in { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+
+  .errbar {
+    display:none; background:#fdecea; color:#a3271b; border-radius:12px;
+    padding:11px 14px; font-size:14px; margin-bottom:14px;
+  }
+  .errbar.on { display:block; }
+
+  /* ---------- 收图区 ---------- */
+  .drop {
+    background:var(--card); border:2px dashed var(--line); border-radius:18px;
+    padding:34px 20px; text-align:center; cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .drop:hover { border-color:#c3ccdb; }
+  .drop.over { border-color:var(--accent); background:var(--accent-soft); }
+  .drop .ic {
+    width:54px; height:54px; margin:0 auto 13px; border-radius:50%;
+    background:var(--accent-soft); color:var(--accent);
+    display:flex; align-items:center; justify-content:center; font-size:29px; font-weight:300;
+  }
+  .drop .t1 { font-size:17px; font-weight:600; margin-bottom:6px; }
+  .drop .t2 { font-size:13.5px; color:var(--dim); line-height:1.7; }
+  .drop kbd {
+    font-family:inherit; background:#eef1f6; border:1px solid var(--line);
+    border-radius:5px; padding:1px 6px; font-size:12.5px; color:#4d5666;
+  }
+  input[type=file] { display:none; }
+
+  .thumbs { display:none; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; margin-top:12px; }
+  .thumbs.on { display:grid; }
+  .thumb { position:relative; aspect-ratio:1/1; border-radius:12px; overflow:hidden; background:#e9ecf2; }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb .x {
+    position:absolute; top:5px; right:5px; width:24px; height:24px; border-radius:50%;
+    background:rgba(0,0,0,.55); color:#fff; border:0; font-size:15px; line-height:24px;
+    text-align:center; cursor:pointer;
+  }
+  .thumb .n {
+    position:absolute; left:5px; bottom:5px; background:rgba(0,0,0,.55); color:#fff;
+    font-size:11px; padding:1px 6px; border-radius:6px;
+  }
+
+  .field { margin-top:18px; }
+  .field label { display:block; font-size:13.5px; color:var(--dim); margin-bottom:8px; }
+  textarea {
+    width:100%; min-height:76px; resize:vertical; padding:13px;
+    border:1px solid var(--line); border-radius:14px; background:var(--card);
+    font-family:inherit; font-size:16px; line-height:1.6; color:var(--text);
+    outline:none; transition:border-color .15s;
+  }
+  textarea:focus { border-color:var(--accent); }
+  textarea::placeholder { color:#a9b2c1; }
+
+  .row { display:flex; gap:10px; margin-top:12px; }
+  .row .item {
+    flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:10px 14px; display:flex; align-items:center; gap:10px;
+  }
+  .row .item span { font-size:13px; color:var(--dim); white-space:nowrap; }
+  .row .item input {
+    border:0; background:transparent; font-family:inherit; font-size:15px;
+    color:var(--text); outline:none; width:100%;
+  }
+
+  .submit {
+    position:fixed; left:0; right:0; bottom:0; padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(transparent, var(--bg) 34%);
+  }
+  .submit button {
+    width:100%; max-width:680px; margin:0 auto; display:block;
+    height:54px; border:0; border-radius:15px; background:var(--accent); color:#fff;
+    font-size:17px; font-weight:600; font-family:inherit; cursor:pointer;
+    box-shadow:0 6px 18px rgba(31,111,224,.26); transition:opacity .15s, transform .1s;
+  }
+  .submit button:active { transform:scale(.99); }
+  .submit button:disabled { opacity:.42; box-shadow:none; }
+  .submit button.sending { opacity:.7; }
+
+  /* ---------- 最近上传 ---------- */
+  .recent { margin-top:30px; }
+  .recent .h {
+    display:flex; align-items:center; margin-bottom:10px;
+    font-size:13.5px; color:var(--dim);
+  }
+  .recent .h .rf {
+    margin-left:auto; background:none; border:0; color:var(--accent);
+    font-size:13px; font-family:inherit; cursor:pointer; padding:4px;
+  }
+  .task {
+    display:flex; align-items:center; gap:12px; padding:12px 14px;
+    background:var(--card); border-radius:14px; margin-bottom:8px;
+  }
+  .task .t { font-size:14.5px; font-variant-numeric:tabular-nums; }
+  .task .c { font-size:12.5px; color:var(--dim); }
+  .task .st {
+    margin-left:auto; font-size:12.5px; padding:3px 9px; border-radius:99px; white-space:nowrap;
+  }
+  .st.pending { background:#fdf3e3; color:var(--warn); }
+  .st.done    { background:#e8f6ee; color:var(--ok); }
+  .st.failed  { background:#fdecea; color:var(--err); }
+  .task .redo {
+    margin-left:10px; background:none; border:1px solid var(--line); border-radius:9px;
+    color:#4a5464; font-size:12.5px; font-family:inherit; padding:5px 10px; cursor:pointer;
+  }
+  .emptyline { font-size:13.5px; color:#a9b2c1; text-align:center; padding:14px 0; }
+  .demoTag { font-size:11px; color:#a2abb9; text-align:center; margin-top:18px; display:none; }
+  .demoTag.on { display:block; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>上传作业</h1>
+    <div class="date" id="todayTxt"></div>
+  </header>
+
+  <div class="toast" id="toast"><span class="ck">✓</span><span id="toastTxt"></span></div>
+  <div class="errbar" id="errbar"></div>
+
+  <div class="drop" id="drop">
+    <div class="ic">+</div>
+    <div class="t1">粘贴、拖入或点这里选择</div>
+    <div class="t2">
+      截图后直接按 <kbd>⌘</kbd> <kbd>V</kbd> 贴进来，可以贴多张<br>
+      电脑上也可以把图片直接拖到这个框里
+    </div>
+    <input type="file" id="file" accept="image/*" multiple>
+  </div>
+
+  <div class="thumbs" id="thumbs"></div>
+
+  <div class="field">
+    <label>老师说的话（可不填）</label>
+    <textarea id="note" placeholder="比如：今天作业在黑板上了，数学要带尺子"></textarea>
+  </div>
+
+  <div class="row">
+    <div class="item"><span>日期</span><input type="date" id="date"></div>
+  </div>
+
+  <div class="recent">
+    <div class="h"><span>最近上传</span><button class="rf" id="refreshBtn">刷新</button></div>
+    <div id="tasks"><div class="emptyline">还没有上传过</div></div>
+  </div>
+
+  <div class="demoTag" id="demoTag">演示模式：没有连上 NAS，数据是页面模拟的</div>
+</div>
+
+<div class="submit"><button id="send" disabled>上传</button></div>
+
+<script>
+(function () {
+  var files = [];
+  var demo = /[?&]demo=1/.test(location.search) || location.protocol === 'file:';
+  var demoTasks = [];
+  var toastTimer = null;
+
+  var dropEl = document.getElementById('drop'), fileEl = document.getElementById('file');
+  var thumbs = document.getElementById('thumbs'), noteEl = document.getElementById('note');
+  var dateEl = document.getElementById('date'), sendBtn = document.getElementById('send');
+  var toastEl = document.getElementById('toast'), toastTx = document.getElementById('toastTxt');
+  var errEl = document.getElementById('errbar'), tasksEl = document.getElementById('tasks');
+
+  var d = new Date();
+  var ymd = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  dateEl.value = ymd;
+  document.getElementById('todayTxt').textContent =
+    (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + '周' + '日一二三四五六'[d.getDay()];
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  /* ---------------- 收图 ---------------- */
+  function addFiles(list) {
+    for (var i = 0; i < list.length; i++) {
+      if (!list[i] || list[i].type.indexOf('image/') !== 0) continue;
+      if (files.length >= 6) break;
+      files.push(list[i]);
+    }
+    paint();
+  }
+
+  function paint() {
+    thumbs.innerHTML = '';
+    files.forEach(function (f, i) {
+      var box = document.createElement('div'); box.className = 'thumb';
+      var img = document.createElement('img'); img.src = URL.createObjectURL(f);
+      var x = document.createElement('button'); x.className = 'x'; x.textContent = '×';
+      x.onclick = function (e) { e.stopPropagation(); files.splice(i, 1); paint(); };
+      var n = document.createElement('div'); n.className = 'n'; n.textContent = i + 1;
+      box.appendChild(img); box.appendChild(n); box.appendChild(x);
+      thumbs.appendChild(box);
+    });
+    thumbs.classList.toggle('on', files.length > 0);
+    dropEl.style.display = files.length ? 'none' : 'block';
+    sendBtn.disabled = files.length === 0;
+    sendBtn.textContent = files.length ? '上传 ' + files.length + ' 张' : '上传';
+  }
+
+  dropEl.onclick = function () { fileEl.click(); };
+  fileEl.onchange = function () { addFiles(fileEl.files); fileEl.value = ''; };
+
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (!e.dataTransfer || files.length) return;
+      e.preventDefault(); dropEl.classList.add('over');
+    });
+  });
+  document.addEventListener('dragleave', function () { dropEl.classList.remove('over'); });
+  document.addEventListener('drop', function (e) {
+    dropEl.classList.remove('over');
+    if (!e.dataTransfer) return;
+    e.preventDefault(); addFiles(e.dataTransfer.files);
+  });
+  document.addEventListener('paste', function (e) {
+    if (!e.clipboardData) return;
+    var got = [];
+    for (var i = 0; i < e.clipboardData.items.length; i++) {
+      var it = e.clipboardData.items[i];
+      if (it.kind === 'file') { var f = it.getAsFile(); if (f) got.push(f); }
+    }
+    if (got.length) { e.preventDefault(); addFiles(got); }
+  });
+
+  /* ---------------- 提交 ---------------- */
+  function toast(msg) {
+    toastTx.textContent = msg;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 6000);
+  }
+  function err(msg) { errEl.textContent = msg; errEl.classList.add('on'); setTimeout(function () { errEl.classList.remove('on'); }, 6000); }
+
+  sendBtn.onclick = function () {
+    if (!files.length) return;
+    var n = files.length;
+    sendBtn.classList.add('sending');
+    sendBtn.disabled = true;
+
+    if (demo) {
+      setTimeout(function () {
+        var now = new Date();
+        demoTasks.unshift({
+          id: Date.now(), count: n,
+          time: pad(now.getHours()) + ':' + pad(now.getMinutes()),
+          status: 'pending'
+        });
+        done(n);
+        setTimeout(function () { demoTasks[0].status = 'done'; paintTasks(); }, 8000);
+      }, 700);
+      return;
+    }
+
+    var fd = new FormData();
+    files.forEach(function (f) { fd.append('files[]', f, f.name || 'shot.png'); });
+    fd.append('note', noteEl.value.trim());
+    fd.append('date', dateEl.value);
+
+    fetch('/ingest', { method:'POST', body:fd }).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    }).then(function () {
+      done(n);
+    }).catch(function () {
+      sendBtn.classList.remove('sending');
+      sendBtn.disabled = false;
+      err('没传上去，检查是不是连的同一个 Wi-Fi');
+    });
+  };
+
+  function done(n) {
+    // 清空表单，让人可以立刻接着传下一批
+    files = []; noteEl.value = ''; paint();
+    sendBtn.classList.remove('sending');
+    toast('收到 ' + n + ' 张，处理完电视上就有');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    loadTasks();
+  }
+
+  /* ---------------- 最近上传 ---------------- */
+  function loadTasks() {
+    if (demo) { paintTasks(); return; }
+    fetch('/batches?limit=6').then(function (r) { return r.json(); })
+      .then(function (d) { demoTasks = d || []; paintTasks(); })
+      .catch(function () {});
+  }
+
+  function paintTasks() {
+    tasksEl.innerHTML = '';
+    if (!demoTasks.length) {
+      tasksEl.innerHTML = '<div class="emptyline">还没有上传过</div>';
+      return;
+    }
+    demoTasks.forEach(function (t) {
+      var el = document.createElement('div');
+      el.className = 'task';
+      var label = { pending:'处理中', done:'已入库', failed:'没识别出来' }[t.status] || t.status;
+      var html = '<div><div class="t">' + (t.date || '今天') + '</div>' +
+                 '<div class="c">' + (t.time || '') + ' · ' + t.count + ' 张</div></div>' +
+                 '<div class="st ' + t.status + '">' + label + '</div>';
+      if (t.status === 'failed') {
+        html += '<button class="redo">重新识别</button>';
+      }
+      el.innerHTML = html;
+      var rb = el.querySelector('.redo');
+      if (rb) rb.onclick = function () { rerun(t.id); };
+      tasksEl.appendChild(el);
+    });
+  }
+
+  function rerun(id) {
+    if (demo) {
+      demoTasks.forEach(function (t) { if (t.id === id) t.status = 'pending'; });
+      paintTasks();
+      setTimeout(function () {
+        demoTasks.forEach(function (t) { if (t.id === id) t.status = 'done'; });
+        paintTasks();
+      }, 4000);
+      return;
+    }
+    fetch('/batch/' + id + '/rerun', { method:'POST' }).then(loadTasks).catch(function () {
+      err('重跑失败');
+    });
+  }
+
+  document.getElementById('refreshBtn').onclick = loadTasks;
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) loadTasks();
+  });
+
+  if (demo) document.getElementById('demoTag').classList.add('on');
+  paint();
+  loadTasks();
+})();
+</script>
+</body>
+</html>

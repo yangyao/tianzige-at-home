@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>今天的作业</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    height:100%;
+    background:#0d0f12;
+    color:#eef1f6;
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+    overflow:hidden;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  body { padding:48px 56px; display:flex; flex-direction:column; }
+
+  /* ---------- 顶部 ---------- */
+  header { display:flex; align-items:baseline; gap:24px; margin-bottom:36px; flex:none; }
+  header h1 { font-size:64px; font-weight:700; letter-spacing:2px; }
+  header .date { font-size:32px; color:#8b95a8; }
+  header .hint { margin-left:auto; font-size:24px; color:#68718a; }
+
+  /* ---------- 卡片区 ---------- */
+  .grid {
+    flex:1; display:grid; gap:36px; align-content:start;
+    grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
+    overflow:hidden;
+  }
+  .card {
+    background:#171b22;
+    border:5px solid #222836;
+    border-radius:22px;
+    padding:20px;
+    transition:transform .12s ease, border-color .12s ease, background .12s ease;
+    display:flex; flex-direction:column; gap:14px;
+    overflow:hidden;
+  }
+  .card.focused {
+    border-color:#4da3ff;
+    background:#1b2130;
+    transform:scale(1.03);
+    box-shadow:0 0 0 6px rgba(77,163,255,.18);
+  }
+  .thumb {
+    width:100%; height:360px; border-radius:14px; overflow:hidden;
+    background:#0a0c10; display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb .ph { font-size:26px; color:#4b5468; letter-spacing:1px; }
+  .card .label { font-size:34px; font-weight:600; }
+  .card .sub { font-size:22px; color:#7d8799; line-height:1.5; max-height:66px; overflow:hidden; }
+
+  /* ---------- 空状态 ---------- */
+  .empty {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+  }
+  .empty .big { font-size:56px; color:#39404f; font-weight:700; }
+  .empty .small { font-size:26px; color:#2f3542; }
+
+  /* ---------- 大图查看 ---------- */
+  #viewer {
+    position:fixed; inset:0; background:#000; display:none; z-index:50;
+    overflow:hidden; cursor:default;
+  }
+  #viewer.on { display:block; }
+  #viewer img {
+    position:absolute; top:50%; left:50%; transform-origin:center center;
+    max-width:none; transition:transform .1s linear;
+  }
+  #vbar {
+    position:absolute; left:0; right:0; bottom:0; padding:20px 40px;
+    background:linear-gradient(transparent, rgba(0,0,0,.85));
+    font-size:26px; color:#c8d0e0; display:flex; gap:32px;
+  }
+  #vbar .k { color:#6e7a90; }
+
+  .fade { animation:fade .18s ease; }
+  @keyframes fade { from{opacity:0} to{opacity:1} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>今天的作业</h1>
+  <div class="date" id="dateText"></div>
+  <div class="hint" id="hint">方向键选择 · OK 看大图</div>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div class="empty" id="empty" style="display:none">
+  <div class="big">今天还没有作业</div>
+  <div class="small">老师发出来后，这里会自动出现</div>
+</div>
+
+<div id="viewer">
+  <img id="vimg" alt="">
+  <div id="vbar">
+    <span><span class="k">方向键</span> 移动</span>
+    <span><span class="k">OK</span> 放大 / 还原</span>
+    <span><span class="k">返回</span> 关闭</span>
+    <span id="vpos" style="margin-left:auto"></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  var state = { items: [], idx: 0, zoom: 1, tx: 0, ty: 0, open: false };
+
+  var grid   = document.getElementById('grid');
+  var empty  = document.getElementById('empty');
+  var viewer = document.getElementById('viewer');
+  var vimg   = document.getElementById('vimg');
+  var vpos   = document.getElementById('vpos');
+
+  var today = new Date();
+  var ymd = today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
+  document.getElementById('dateText').textContent = ymd.replace(/-/g, ' / ');
+
+  /* ---------------- 取数据 ---------------- */
+  function load() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/today?date=' + ymd, true);
+    xhr.timeout = 6000;
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        try {
+          var d = JSON.parse(xhr.responseText);
+          render((d && d.items) || []);
+          return;
+        } catch (e) {}
+      }
+      render(demo());
+    };
+    xhr.onerror = xhr.ontimeout = function () { render(demo()); };
+    xhr.send();
+  }
+
+  // 后端没起时用这个，方便先看版式
+  function demo() {
+    return [
+      { url: '', ocr: '语文：第 32 页 第 1-5 题，朗读课文三遍并背第一段。' },
+      { url: '', ocr: '数学：练习册 P18，口算本一页，家长签字。' },
+      { url: '', ocr: '英语：跟读 Unit 4 音频，抄写单词 each、both、never 各三遍。' }
+    ];
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function render(items) {
+    state.items = items;
+    state.idx = 0;
+    grid.innerHTML = '';
+
+    if (!items.length) {
+      grid.style.display = 'none';
+      empty.style.display = 'flex';
+      return;
+    }
+    grid.style.display = 'grid';
+    empty.style.display = 'none';
+
+    items.forEach(function (it, i) {
+      var card = document.createElement('div');
+      card.className = 'card' + (i === 0 ? ' focused' : '');
+      card.setAttribute('data-i', i);
+
+      var thumb = document.createElement('div');
+      thumb.className = 'thumb';
+      if (it.url) {
+        var img = document.createElement('img');
+        img.src = it.url;
+        img.onerror = function () {
+          thumb.innerHTML = '<div class="ph">作业照片</div>';
+        };
+        thumb.appendChild(img);
+      } else {
+        thumb.innerHTML = '<div class="ph">作业照片</div>';
+      }
+
+      var label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = subjectOf(it, i);
+
+      var sub = document.createElement('div');
+      sub.className = 'sub';
+      sub.textContent = it.ocr || '（暂无文字识别，请看图片）';
+
+      card.appendChild(thumb);
+      card.appendChild(label);
+      card.appendChild(sub);
+      card.addEventListener('click', function () { focusCard(i); openViewer(); });
+      grid.appendChild(card);
+    });
+  }
+
+  function subjectOf(it, i) {
+    var t = it.ocr || '';
+    if (t.indexOf('语文') >= 0) return '语文';
+    if (t.indexOf('数学') >= 0) return '数学';
+    if (t.indexOf('英语') >= 0) return '英语';
+    return '作业 ' + (i + 1);
+  }
+
+  /* ---------------- 卡片焦点 ---------------- */
+  function focusCard(i) {
+    var cards = grid.querySelectorAll('.card');
+    if (!cards.length) return;
+    i = Math.max(0, Math.min(cards.length - 1, i));
+    state.idx = i;
+    for (var k = 0; k < cards.length; k++) {
+      cards[k].classList.toggle('focused', k === i);
+    }
+    cards[i].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function cols() {
+    var cards = grid.querySelectorAll('.card');
+    if (!cards.length) return 1;
+    var top = cards[0].offsetTop;
+    var n = 0;
+    for (var i = 0; i < cards.length; i++) {
+      if (cards[i].offsetTop === top) n++;
+    }
+    return Math.max(1, n);
+  }
+
+  /* ---------------- 大图 ---------------- */
+  function openViewer() {
+    var it = state.items[state.idx];
+    if (!it) return;
+    state.open = true;
+    state.zoom = 1; state.tx = 0; state.ty = 0;
+    viewer.classList.add('on');
+    vimg.removeAttribute('src');
+
+    if (it.url) {
+      vimg.onerror = function () {
+        vimg.onerror = null;
+        vimg.style.width = '1px';
+        vpos.textContent = '图片加载失败';
+      };
+      vimg.onload = function () {
+        fitViewer();
+        document.getElementById('hint').textContent = '方向键移动 · OK 放大 · 返回关闭';
+      };
+      vimg.src = it.url;
+    } else {
+      vimg.style.width = '1px';
+      vpos.textContent = '示例卡片 · 还没有真实图片';
+    }
+  }
+
+  function fitViewer() {
+    var vw = window.innerWidth, vh = window.innerHeight - 90;
+    var r = vw / vimg.naturalWidth;
+    var r2 = vh / vimg.naturalHeight;
+    var s = Math.min(r, r2);
+    vimg.style.width = (vimg.naturalWidth * s) + 'px';
+    vimg.style.marginLeft = (-vimg.naturalWidth * s / 2) + 'px';
+    vimg.style.marginTop  = (-vimg.naturalHeight * s / 2) + 'px';
+    applyTransform();
+  }
+
+  function applyTransform() {
+    vimg.style.transform =
+      'translate(' + state.tx + 'px,' + state.ty + 'px) scale(' + state.zoom + ')';
+  }
+
+  function closeViewer() {
+    state.open = false;
+    viewer.classList.remove('on');
+    document.getElementById('hint').textContent = '方向键选择 · OK 看大图';
+  }
+
+  /* ---------------- 键位 ---------------- */
+  document.addEventListener('keydown', function (e) {
+    var k = e.key;
+    var BACK = (k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack');
+
+    if (state.open) {
+      if (BACK) { closeViewer(); }
+      else if (k === 'Enter' || k === ' ') {
+        state.zoom = state.zoom > 1 ? 1 : 2;
+        if (state.zoom === 1) { state.tx = 0; state.ty = 0; }
+        applyTransform();
+      }
+      else if (k === 'ArrowLeft')  { state.tx += 160; applyTransform(); }
+      else if (k === 'ArrowRight') { state.tx -= 160; applyTransform(); }
+      else if (k === 'ArrowUp')    { state.ty += 160; applyTransform(); }
+      else if (k === 'ArrowDown')  { state.ty -= 160; applyTransform(); }
+      else return;
+      e.preventDefault();
+      return;
+    }
+
+    var n = state.items.length;
+    if (!n) return;
+
+    if (k === 'ArrowRight')      { focusCard(state.idx + 1); }
+    else if (k === 'ArrowLeft')  { focusCard(state.idx - 1); }
+    else if (k === 'ArrowDown')  { focusCard(state.idx + cols()); }
+    else if (k === 'ArrowUp')    { focusCard(state.idx - cols()); }
+    else if (k === 'Enter' || k === ' ') { openViewer(); }
+    else return;
+    e.preventDefault();
+  });
+
+  load();
+  window.addEventListener('resize', function () { if (state.open && vimg.naturalWidth) fitViewer(); });
+  setInterval(load, 5 * 60 * 1000); // 五分钟自己刷一次，孩子不用退出重进
+})();
+</script>
+</body>
+</html>

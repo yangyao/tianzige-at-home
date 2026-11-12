@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>电视端 UI 设计稿 · 今日作业</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#16181c; color:#dfe4ec; overflow-x:hidden;
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:60px 0 150px;
+  }
+
+  /* ---------------- 画板 ---------------- */
+  #stage {
+    width:1920px; height:1080px; transform-origin:center center;
+    position:relative; flex:none;
+  }
+  .tv {
+    width:1920px; height:1080px; background:#0b0d10; color:#eef2f7;
+    position:relative; overflow:hidden; display:flex; flex-direction:column;
+    padding:48px 60px 0;
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+  }
+
+  /* ---------------- 顶栏 ---------------- */
+  .topbar { display:flex; align-items:flex-end; gap:28px; height:96px; flex:none; }
+  .topbar h1 { font-size:58px; font-weight:700; letter-spacing:1px; line-height:1; }
+  .topbar .sub { font-size:30px; color:#7d8798; padding-bottom:6px; }
+  .topbar .right { margin-left:auto; display:flex; align-items:center; gap:18px; padding-bottom:8px; }
+  .chip {
+    font-size:24px; color:#9fb0c8; background:#171c24; border:1px solid #232b38;
+    padding:8px 18px; border-radius:999px;
+  }
+
+  /* ---------------- 本周日期条 ---------------- */
+  .week { display:flex; align-items:center; gap:14px; margin-top:26px; height:104px; flex:none; }
+  .nav {
+    width:56px; height:100px; display:flex; align-items:center; justify-content:center;
+    color:#404a5c; font-size:34px; flex:none;
+  }
+  .nav.on { color:#8fa3bf; }
+  .days { display:flex; gap:14px; }
+  .day {
+    width:222px; height:100px; border-radius:16px; background:#141920;
+    border:2px solid #1d242f; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:4px; position:relative;
+  }
+  .day .w { font-size:23px; color:#6f7a8d; }
+  .day .d { font-size:40px; font-weight:600; line-height:1; }
+  .day .dot {
+    position:absolute; top:12px; right:14px; width:11px; height:11px;
+    border-radius:50%; background:#ffb454;
+  }
+  .day.today { background:#12324f; border-color:#1e4d78; }
+  .day.today .w { color:#8fc4f5; }
+  .day.today .d { color:#e8f3ff; }
+  .day.sel { border-color:#4da3ff; box-shadow:0 0 0 5px rgba(77,163,255,.16); }
+  .day.today.sel { background:#154066; }
+  .day.past .d, .day.past .w { opacity:.55; }
+
+  /* ---------------- 内容区 ---------------- */
+  .content { flex:1; display:flex; gap:44px; margin-top:30px; min-height:0; }
+
+  .figure { flex:0 0 1090px; display:flex; flex-direction:column; min-height:0; position:relative; }
+  .photo {
+    flex:1; border-radius:20px; overflow:hidden; background:#101419;
+    border:1px solid #202835; position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo .tag {
+    position:absolute; top:18px; right:20px; font-size:24px; color:#dbe6f5;
+    background:rgba(10,14,20,.72); padding:8px 16px; border-radius:10px; letter-spacing:1px;
+  }
+  /* 黑板占位（示意） */
+  .board {
+    width:100%; height:100%;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,.06), transparent 60%),
+      linear-gradient(160deg, #22412f 0%, #1a3527 55%, #16302400 100%),
+      #1b3629;
+    padding:52px 58px; position:relative;
+    font-family:"Kaiti SC","STKaiti","KaiTi",serif;
+    color:#eaf2e6; letter-spacing:2px;
+  }
+  .board::after {
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(105deg, rgba(255,255,255,.07) 0%, transparent 28%, transparent 72%, rgba(255,255,255,.04) 100%);
+  }
+  .board h3 { font-size:36px; font-weight:400; margin-bottom:26px; color:#f4faf0; }
+  .board p { font-size:31px; line-height:1.95; opacity:.94; }
+  .board p.dim { opacity:.55; }
+
+  .thumbstrip { display:flex; gap:14px; margin-top:18px; flex:none; height:0; }
+
+  /* 文字区 */
+  .text { flex:1; display:flex; flex-direction:column; min-height:0; padding-top:6px; }
+  .subject { display:flex; align-items:center; gap:16px; margin-bottom:8px; }
+  .subject .name { font-size:52px; font-weight:700; letter-spacing:1px; }
+  .subject .idx { font-size:26px; color:#6d788a; padding-top:10px; }
+  .rule { height:2px; background:#1d2532; margin:18px 0 26px; flex:none; }
+
+  .lines { flex:1; overflow:hidden; }
+  .lines p {
+    font-size:42px; line-height:1.72; color:#e2e9f3; margin-bottom:26px;
+    letter-spacing:.5px;
+  }
+  .lines p .num { color:#4da3ff; font-weight:600; margin-right:14px; }
+  .lines .more { font-size:26px; color:#5f6b7e; }
+
+  .note-ocr {
+    font-size:24px; color:#5a6678; padding-top:16px; border-top:1px solid #171d27; flex:none;
+  }
+
+  /* ---------------- 底栏 ---------------- */
+  .foot {
+    height:66px; display:flex; align-items:center; gap:36px; flex:none;
+    font-size:25px; color:#5f6b7e;
+  }
+  .foot .k { display:flex; align-items:center; gap:10px; }
+  .foot .cap {
+    background:#171d26; border:1px solid #242d3c; border-radius:8px;
+    padding:5px 12px; font-size:23px; color:#9aa8bd; min-width:44px; text-align:center;
+  }
+
+  /* ---------------- 空状态 ---------------- */
+  .empty {
+    position:absolute; inset:300px 60px 66px 60px;
+    display:none; flex-direction:column; align-items:center; justify-content:center; gap:26px;
+  }
+  .empty .big { font-size:64px; color:#4a5468; font-weight:700; letter-spacing:2px; }
+  .empty .small { font-size:30px; color:#39424f; }
+  .tv.is-empty .content { visibility:hidden; }
+  .tv.is-empty .empty { display:flex; }
+
+  /* ---------------- 全屏大图 ---------------- */
+  .viewer {
+    position:absolute; inset:0; background:#000; display:none; z-index:30;
+    align-items:center; justify-content:center; flex-direction:column;
+  }
+  .tv.is-view .viewer { display:flex; }
+  .viewer .frame { width:1720px; height:900px; display:flex; align-items:center; justify-content:center; }
+  .viewer .bar {
+    position:absolute; left:0; right:0; bottom:0; height:88px;
+    background:linear-gradient(transparent, rgba(0,0,0,.9));
+    display:flex; align-items:center; justify-content:center; gap:40px;
+    font-size:25px; color:#8c99ac;
+  }
+
+  /* ---------------- 设计标注 ---------------- */
+  .note { position:absolute; display:none; border:2px dashed rgba(255,120,120,.55); border-radius:8px; }
+  .note span {
+    position:absolute; left:0; top:-34px; font-size:21px; color:#ff9b9b;
+    background:rgba(255,80,80,.12); padding:3px 10px; border-radius:6px; white-space:nowrap;
+    font-family:ui-monospace,monospace;
+  }
+  .tv.notes .note { display:block; }
+  .n1 { left:60px; top:48px; right:60px; bottom:0; border-color:rgba(120,180,255,.45); }
+  .n1 span { color:#9cc4ff; background:rgba(80,140,255,.14); }
+  .n2 { left:60px; top:170px; right:60px; height:104px; }
+  .n3 { left:60px; top:300px; width:1090px; bottom:66px; }
+  .n4 { left:1194px; top:300px; right:60px; bottom:66px; }
+
+  /* ---------------- 控制条（不属于设计稿） ---------------- */
+  #panel {
+    position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+    display:flex; gap:8px; background:#1e2228; border:1px solid #2b323c;
+    padding:8px; border-radius:12px; z-index:100; font-size:13px;
+  }
+  #panel button {
+    background:#272d36; color:#c3ccda; border:1px solid #333c48;
+    padding:7px 14px; border-radius:8px; cursor:pointer; font-size:13px;
+    font-family:inherit;
+  }
+  #panel button:hover { background:#313945; }
+  #panel button.on { background:#2c4a6b; border-color:#3f6b96; color:#dbeaff; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+<div class="tv" id="tv">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <h1 id="title">今天的作业</h1>
+    <div class="sub" id="sub">2026年11月12日 星期四</div>
+    <div class="right">
+      <div class="chip" id="relChip" style="display:none">3 天前</div>
+      <div class="chip">已同步 17:42</div>
+    </div>
+  </div>
+
+  <!-- 本周 -->
+  <div class="week">
+    <div class="nav on">‹</div>
+    <div class="days" id="days"></div>
+    <div class="nav">›</div>
+  </div>
+
+  <!-- 内容 -->
+  <div class="content">
+    <div class="figure">
+      <div class="photo">
+        <div class="board" id="board">
+          <h3>11月12日 星期四 作业</h3>
+          <p>语文：第32页 1—5题，朗读课文三遍</p>
+          <p>数学：练习册P18，口算本一页，家长签字</p>
+          <p>英语：跟读Unit 4，抄写单词各三遍</p>
+          <p class="dim">明天带跳绳，穿运动鞋</p>
+        </div>
+        <div class="tag" id="photoTag">数学 2 / 3</div>
+      </div>
+    </div>
+
+    <div class="text">
+      <div class="subject">
+        <div class="name" id="subjectName">数学</div>
+        <div class="idx" id="subjectIdx">第 2 项 / 共 3 项</div>
+      </div>
+      <div class="rule"></div>
+      <div class="lines" id="lines">
+        <p><span class="num">1</span>练习册 P18，第 1—6 题</p>
+        <p><span class="num">2</span>口算本一页，计时 5 分钟</p>
+        <p><span class="num">3</span>错的题在下面重写一遍</p>
+        <p><span class="num">4</span>家长签字</p>
+      </div>
+      <div class="note-ocr">识别结果，仅供参考 · 以右边原图为准</div>
+    </div>
+  </div>
+
+  <!-- 空状态 -->
+  <div class="empty">
+    <div class="big">今天还没有作业</div>
+    <div class="small">老师发出来之后，这里会自己出现</div>
+  </div>
+
+  <!-- 全屏 -->
+  <div class="viewer">
+    <div class="frame">
+      <div class="board" style="width:1600px;height:860px">
+        <h3 style="font-size:52px">11月12日 星期四 作业</h3>
+        <p style="font-size:46px">语文：第32页 1—5题，朗读课文三遍</p>
+        <p style="font-size:46px">数学：练习册P18，口算本一页，家长签字</p>
+        <p style="font-size:46px">英语：跟读Unit 4，抄写单词各三遍</p>
+      </div>
+    </div>
+    <div class="bar">
+      <span>方向键 移动</span><span>OK 放大</span><span>返回 关闭</span>
+    </div>
+  </div>
+
+  <!-- 底栏 -->
+  <div class="foot">
+    <div class="k"><span class="cap">←</span><span class="cap">→</span> 换日期</div>
+    <div class="k"><span class="cap">↑</span><span class="cap">↓</span> 换科目</div>
+    <div class="k"><span class="cap">OK</span> 看大图</div>
+    <div class="k"><span class="cap">返回</span> 退出</div>
+  </div>
+
+  <!-- 标注 -->
+  <div class="note n1"><span>安全边距 60px</span></div>
+  <div class="note n2"><span>日期条：本周 7 天 · 圆点=有作业</span></div>
+  <div class="note n3"><span>图片区 1090 × 714</span></div>
+  <div class="note n4"><span>文字区 666px · 正文 42px</span></div>
+
+</div>
+</div>
+
+<div id="panel">
+  <button data-s="today" class="on">今天</button>
+  <button data-s="yesterday">昨天</button>
+  <button data-s="past">上周某天</button>
+  <button data-s="empty">没有作业</button>
+  <button data-s="view">全屏看图</button>
+  <button data-s="notes">显示标注</button>
+</div>
+
+<script>
+(function () {
+  var tv = document.getElementById('tv');
+  var stage = document.getElementById('stage');
+
+  var WEEK = [
+    { w:'周一', d:10, has:true  },
+    { w:'周二', d:11, has:true  },
+    { w:'周三', d:12, has:true, today:true },
+    { w:'周四', d:13, has:false },
+    { w:'周五', d:14, has:false },
+    { w:'周六', d:15, has:false },
+    { w:'周日', d:16, has:false }
+  ];
+  var sel = 2;
+
+  var daysEl   = document.getElementById('days');
+  var titleEl  = document.getElementById('title');
+  var subEl    = document.getElementById('sub');
+  var relChip  = document.getElementById('relChip');
+  var tagEl    = document.getElementById('photoTag');
+  var nameEl   = document.getElementById('subjectName');
+  var idxEl    = document.getElementById('subjectIdx');
+
+  function renderDays() {
+    daysEl.innerHTML = '';
+    WEEK.forEach(function (it, i) {
+      var el = document.createElement('div');
+      el.className = 'day';
+      if (it.today) el.className += ' today';
+      if (i === sel) el.className += ' sel';
+      if (i > 2) el.className += ' past';
+      el.innerHTML = '<div class="w">' + it.w + '</div><div class="d">' + it.d + '</div>' +
+                     (it.has ? '<div class="dot"></div>' : '');
+      daysEl.appendChild(el);
+    });
+  }
+
+  function setDate(i) {
+    sel = Math.max(0, Math.min(WEEK.length - 1, i));
+    renderDays();
+    tv.classList.remove('is-empty', 'is-view');
+
+    var it = WEEK[sel];
+    var diff = 12 - it.d;               // 以 12 号为今天
+    if (diff === 0) {
+      titleEl.textContent = '今天的作业';
+      relChip.style.display = 'none';
+    } else if (diff === 1) {
+      titleEl.textContent = '昨天的作业';
+      relChip.style.display = 'none';
+    } else {
+      titleEl.textContent = it.d + '日的作业';
+      relChip.textContent = diff + ' 天前';
+      relChip.style.display = 'block';
+    }
+    subEl.textContent = '2026年11月' + it.d + '日 ' + ['星期一','星期二','星期三','星期四','星期五','星期六','星期日'][(it.d - 9) % 7];
+
+    if (!it.has) {
+      tv.classList.add('is-empty');
+      return;
+    }
+    // 样式演示：不同日期换一下科目，看起来不是死的
+    var subjects = [
+      { name:'语文', n:3, tag:'语文 1 / 3' },
+      { name:'数学', n:3, tag:'数学 2 / 3' },
+      { name:'英语', n:3, tag:'英语 3 / 3' }
+    ];
+    var s = subjects[(it.d) % 3];
+    nameEl.textContent = s.name;
+    idxEl.textContent = '第 ' + ((it.d) % 3 + 1) + ' 项 / 共 3 项';
+    tagEl.textContent = s.tag;
+  }
+
+  document.getElementById('panel').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    var s = b.getAttribute('data-s');
+
+    if (s === 'notes') {
+      tv.classList.toggle('notes');
+      b.classList.toggle('on');
+      return;
+    }
+    tv.classList.remove('is-view');
+    if (s === 'view') {
+      tv.classList.add('is-view');
+      return;
+    }
+    if (s === 'empty') {
+      renderDays();
+      tv.classList.add('is-empty');
+      titleEl.textContent = '今天的作业';
+      subEl.textContent = '2026年11月12日 星期四';
+      relChip.style.display = 'none';
+      return;
+    }
+    if (s === 'today')     setDate(2);
+    if (s === 'yesterday') setDate(1);
+    if (s === 'past')      setDate(0);
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) {
+      if (x.getAttribute('data-s') !== 'notes') x.classList.remove('on');
+    });
+    b.classList.add('on');
+  });
+
+  // 键盘也能模拟，方便在电视上试
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft')  { setDate(sel - 1); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { setDate(sel + 1); e.preventDefault(); }
+    if (e.key === 'Enter')      { tv.classList.toggle('is-view'); e.preventDefault(); }
+    if (e.key === 'Escape')     { tv.classList.remove('is-view'); }
+  });
+
+  function fit() {
+    var s = Math.min((window.innerWidth - 40) / 1920, (window.innerHeight - 220) / 1080);
+    stage.style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+
+  renderDays();
+  fit();
+})();
+</script>
+</body>
+</html>
