@@ -1,0 +1,473 @@
+openapi: 3.0.3
+
+info:
+  title: 家里的田字格 · API
+  version: 1.0.0
+  description: |
+    小学生课后作业管理服务。跑在 NAS 上，仅局域网访问，无鉴权。
+
+    **三层职责，不要混**
+    - 接入层：`/api/ingest` 只负责把文件落盘并写一条 `pending` 记录，立即返回。
+    - 识别层：OCR 与分科是后台异步动作，可对任意历史批次用 `/api/batch/{id}/rerun` 重跑。
+    - 呈现层：`/api/day`、`/api/days` 只读，给电视端和调试页用。
+
+    **三条不可违背的约定**
+    1. 时间一律 `Asia/Shanghai`，日期字段一律 `YYYY-MM-DD`，时间戳一律 RFC3339 带 `+08:00` 偏移。
+    2. 图片 URL 一律相对路径（`/img/...`），由客户端拼 base URL。服务端不感知自己的外网地址。
+    3. 识别失败不阻塞呈现：`status=failed` 时 `images` 依然完整可读，客户端退化为「只看图」。
+
+servers:
+  - url: http://nas.local:8080
+    description: 局域网默认地址，实际以你 NAS 的 IP 为准
+
+tags:
+  - name: ingest
+    description: 上传与批次管理（上传端调用）
+  - name: read
+    description: 只读呈现（电视端调用）
+  - name: ops
+    description: 运维
+
+paths:
+
+  /api/health:
+    get:
+      tags: [ops]
+      summary: 健康检查
+      operationId: getHealth
+      responses:
+        '200':
+          description: 服务存活
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, version, time]
+                properties:
+                  ok: { type: boolean, example: true }
+                  version: { type: string, example: "1.0.0" }
+                  time: { type: string, format: date-time, example: "2026-11-12T20:30:00+08:00" }
+                  db: { type: string, enum: [ok, error], example: ok }
+                  ocr: { type: string, enum: [ok, unavailable, unconfigured], example: ok, description: OCR 引擎可用性，仅用于排障，不影响 200 }
+
+  /api/ingest:
+    post:
+      tags: [ingest]
+      summary: 上传一批作业照片
+      description: |
+        立即返回，不等识别。返回体里的 `batch_id` 用于后续查询与重跑。
+
+        客户端拿到 202 就应该清空表单让用户走人，**不要轮询等结果**。
+        处理结果在 `/api/batches` 的列表里看，或直接看电视端。
+      operationId: ingest
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  minItems: 1
+                  maxItems: 6
+                  items: { type: string, format: binary }
+                  description: 1–6 张，jpg/png/heic/webp，单张 ≤ 20MB
+                note:
+                  type: string
+                  maxLength: 500
+                  description: 老师配的那句话，可空。参与分科推理
+                date:
+                  type: string
+                  pattern: '^\d{4}-\d{2}-\d{2}$'
+                  description: 归属日期，缺省为服务端当天
+      responses:
+        '202':
+          description: 已落盘，识别在后台排队
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMedia'
+
+  /api/batches:
+    get:
+      tags: [ingest]
+      summary: 最近批次列表
+      description: 上传端的「最近上传」区。按 `created_at` 倒序。
+      operationId: listBatches
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 6, minimum: 1, maximum: 50 }
+        - name: date
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+          description: 只取某一天的批次，缺省不限
+      responses:
+        '200':
+          description: 批次列表
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [batches]
+                properties:
+                  batches:
+                    type: array
+                    items: { $ref: '#/components/schemas/BatchSummary' }
+
+  /api/batch/{id}:
+    get:
+      tags: [ingest]
+      summary: 批次详情
+      description: 含原图列表与按科目分组后的作业条目。识别未完成时 `subjects` 为空数组。
+      operationId: getBatch
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+      responses:
+        '200':
+          description: 批次详情
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchDetail' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [ingest]
+      summary: 删除批次
+      description: |
+        上传错了要能撤。删除批次记录、其下所有条目、以及磁盘上的原图。
+        已删除的 id 不复用。
+      operationId: deleteBatch
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+      responses:
+        '204':
+          description: 已删除
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/batch/{id}/rerun:
+    post:
+      tags: [ingest]
+      summary: 重新识别
+      description: |
+        对已落盘的图片重跑 OCR + 分科，不需要重新上传。
+        用于换 OCR 引擎、改分科 prompt、或上一次识别失败。
+        该批次所有 `item` 先清空再重建；`batch.date` 与图片不变。
+      operationId: rerunBatch
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+      responses:
+        '202':
+          description: 已重新入队
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, status]
+                properties:
+                  id: { type: integer, example: 318 }
+                  status: { $ref: '#/components/schemas/BatchStatus' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/day:
+    get:
+      tags: [read]
+      summary: 某一天的全部作业（电视端主接口）
+      description: |
+        聚合该日期下所有批次，按科目合并去重后返回。这是电视端唯一需要的业务接口。
+
+        **三种状态，客户端必须都处理**
+        - `empty`：当天确实没有作业 → 显示「今天还没有作业 / 老师发出来之后这里会自己出现」
+        - `pending`：有图但还没识别完 → 只显示原图，文字区显示「正在识别」
+        - `ready`：识别完成 → 左图右文
+
+        注意 `empty` 和 `pending` 是两件事：前者是老师没发，后者是发了但还没处理。
+        把它们混成一个状态，孩子会以为今天没作业。
+      operationId: getDay
+      parameters:
+        - name: date
+          in: query
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+          description: 缺省为服务端当天
+      responses:
+        '200':
+          description: 当天视图
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DayView' }
+
+  /api/days:
+    get:
+      tags: [read]
+      summary: 一段日期内哪些天有作业（日期条用）
+      description: |
+        电视端日期条上的圆点靠这个接口。一次最多查 62 天。
+
+        返回值按日期升序，且**一定包含区间内每一天**（没有作业的 `has=false`），
+        这样客户端不用补空位。
+      operationId: getDays
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+      responses:
+        '200':
+          description: 日期标记数组
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [days]
+                properties:
+                  days:
+                    type: array
+                    items: { $ref: '#/components/schemas/DayMark' }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /img/{date}/{filename}:
+    get:
+      tags: [read]
+      summary: 原图
+      description: |
+        静态文件。`date` 为 `YYYY-MM-DD`，`filename` 为服务端生成的名字。
+        实现上就是把数据目录当静态根，注意防目录穿越。
+      operationId: getImage
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        - name: filename
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 图片二进制
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+
+  parameters:
+    BatchId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+
+  responses:
+    BadRequest:
+      description: 参数不合法
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: invalid_date, message: "日期格式应为 YYYY-MM-DD" }
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: not_found, message: "批次 318 不存在" }
+    TooLarge:
+      description: 文件过大
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: file_too_large, message: "单张图片不能超过 20MB" }
+    UnsupportedMedia:
+      description: 文件类型不支持
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error: { code: unsupported_type, message: "只接受 jpg/png/heic/webp" }
+
+  schemas:
+
+    BatchStatus:
+      type: string
+      description: |
+        状态机：`pending → ocr → parsing → done`，任一环节失败落 `failed`。
+        `failed` 可通过 rerun 回到 `pending`。
+        客户端只需要区分「未完成」和「有结果」两类，不要按状态值写死 UI。
+      enum: [pending, ocr, parsing, done, failed]
+      example: done
+
+    Subject:
+      type: string
+      description: |
+        科目名，中文字符串，直接展示，客户端不要做映射表。
+        服务端保证排序固定为：语文、数学、英语、科学、道法、其他，未知科目排在最后。
+      example: 数学
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - bad_request
+                - invalid_date
+                - too_many_files
+                - file_too_large
+                - unsupported_type
+                - not_found
+                - ocr_failed
+                - parse_failed
+                - llm_unavailable
+                - internal
+              description: 机器可判的分支依据
+            message:
+              type: string
+              description: 给人看的中文说明，客户端可直接展示
+
+    IngestResponse:
+      type: object
+      required: [batch_id, status, date, image_count]
+      properties:
+        batch_id: { type: integer, example: 318 }
+        status: { $ref: '#/components/schemas/BatchStatus' }
+        date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$', example: "2026-11-12" }
+        image_count: { type: integer, example: 3 }
+        duplicate_of:
+          type: integer
+          nullable: true
+          description: |
+            若所有图片的 sha256 都与某个已有批次完全相同，返回那个批次 id，
+            并且**不新建记录**（`batch_id` 即该已有批次）。软去重，不报错。
+
+    BatchSummary:
+      type: object
+      required: [id, date, created_at, status, image_count, item_count]
+      properties:
+        id: { type: integer }
+        date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        created_at: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/BatchStatus' }
+        image_count: { type: integer }
+        item_count:
+          type: integer
+          description: 识别出的作业条目总数，未完成时为 0
+        note: { type: string, nullable: true }
+        error:
+          type: string
+          nullable: true
+          description: status=failed 时的简短原因，给人看
+
+    Image:
+      type: object
+      required: [id, url, width, height]
+      properties:
+        id: { type: integer }
+        url: { type: string, example: "/img/2026-11-12/318_1.jpg" }
+        width: { type: integer, description: 像素宽，客户端据此算宽高比，避免加载时跳版 }
+        height: { type: integer }
+        ocr:
+          type: string
+          nullable: true
+          description: 这张图的 OCR 原文。可能很长，客户端只用于「查看原文」
+
+    Item:
+      type: object
+      required: [id, content, done]
+      properties:
+        id: { type: integer }
+        content: { type: string, example: "练习册 P18 第 1–6 题" }
+        done: { type: boolean, description: 打勾状态，MVP 阶段恒为 false }
+        done_at: { type: string, format: date-time, nullable: true }
+
+    SubjectGroup:
+      type: object
+      required: [subject, items]
+      properties:
+        subject: { $ref: '#/components/schemas/Subject' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Item' }
+        image_url:
+          type: string
+          nullable: true
+          description: 该科目最相关的那张原图，电视端左图右文时用来配对
+
+    BatchDetail:
+      type: object
+      required: [id, date, created_at, status, images, subjects]
+      properties:
+        id: { type: integer }
+        date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        created_at: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/BatchStatus' }
+        note: { type: string, nullable: true }
+        error: { type: string, nullable: true }
+        images:
+          type: array
+          items: { $ref: '#/components/schemas/Image' }
+        subjects:
+          type: array
+          items: { $ref: '#/components/schemas/SubjectGroup' }
+
+    DayView:
+      type: object
+      required: [date, is_today, state, images, subjects]
+      properties:
+        date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        is_today: { type: boolean }
+        days_ago:
+          type: integer
+          description: 相对今天的天数，0=今天，1=昨天，负数=未来。电视端右上角角标用它
+        state:
+          type: string
+          enum: [empty, pending, ready]
+          description: 电视端只认这三个值
+        note: { type: string, nullable: true }
+        images:
+          type: array
+          description: 当天所有原图，按批次时间升序
+          items: { $ref: '#/components/schemas/Image' }
+        subjects:
+          type: array
+          description: 当天所有科目合并后的条目。state!=ready 时为空数组
+          items: { $ref: '#/components/schemas/SubjectGroup' }
+        batch_ids:
+          type: array
+          description: 当天涉及的批次 id，仅调试用
+          items: { type: integer }
+
+    DayMark:
+      type: object
+      required: [date, has, item_count]
+      properties:
+        date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$' }
+        has:
+          type: boolean
+          description: 有作业（有图即算，不等识别完成）
+        item_count: { type: integer }
