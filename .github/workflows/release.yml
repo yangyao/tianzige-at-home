@@ -38,6 +38,10 @@ jobs:
         with:
           go-version: '1.23.12'
           cache-dependency-path: services/homework-server/go.sum
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
+          log-accepted-android-sdk-licenses: false
       - name: Restore existing Android signing identity
         env:
           KEYSTORE: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
@@ -49,7 +53,6 @@ jobs:
       - name: Build and verify TV
         working-directory: apps/tv-android
         run: |
-          sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
           sh gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
           mkdir -p ../../dist
           cp app/build/outputs/apk/debug/app-debug.apk ../../dist/tianzige-tv-debug.apk
