@@ -4,169 +4,241 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>上传作业</title>
+<meta name="theme-color" content="#14181C">
+<title>作业上传 · 家里的田字格</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   :root {
-    --bg:#f4f5f7; --card:#fff; --text:#171a20; --dim:#7c8698;
-    --line:#e2e6ed; --accent:#1f6fe0; --accent-soft:#eaf1fd;
-    --ok:#12925c; --warn:#b8761f; --err:#c0392b;
+    /* 设计 token，见 design/tokens.json */
+    --bg:#14181C; --surface:#1D2329; --raised:#262E36; --overlay:rgba(0,0,0,.86);
+    --text:#F2F5F8; --text2:#A8B2BE; --dim:#6F7B88;
+    --accent:#E9B44C; --accent-ink:#1A1206; --brand:#3E7A5E; --flower:#D9544D;
+    --ok:#4CAF7D; --warn:#E9A23B; --err:#D9544D;
+    --line:rgba(255,255,255,.09);
+    --r-sm:8px; --r-md:12px; --r-lg:20px; --r-full:999px;
+    --f-title:22px; --f-body:15px; --f-cap:13px; --f-min:12px;
+    --motion:120ms ease-out;
   }
+  html { color-scheme:dark; }
   body {
     background:var(--bg); color:var(--text);
-    font-family:"PingFang SC","Microsoft YaHei",-apple-system,system-ui,sans-serif;
-    font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;
+    font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:var(--f-body); line-height:1.55; -webkit-font-smoothing:antialiased;
+    min-height:100vh;
   }
-  .wrap { max-width:680px; margin:0 auto; padding:22px 18px 110px; }
+  button, input, textarea { font-family:inherit; }
+  .wrap { max-width:720px; margin:0 auto; padding:22px 20px 132px; }
 
-  header { display:flex; align-items:baseline; gap:12px; margin-bottom:16px; }
-  header h1 { font-size:22px; font-weight:700; letter-spacing:.5px; }
-  header .date { font-size:14px; color:var(--dim); margin-left:auto; white-space:nowrap; }
+  /* ---------- 顶栏 ---------- */
+  header { display:flex; align-items:baseline; gap:10px; margin-bottom:18px; }
+  header h1 { font-size:var(--f-title); font-weight:700; letter-spacing:.4px; }
+  header .kind { font-size:var(--f-cap); color:var(--dim); }
+  header .date { margin-left:auto; font-size:var(--f-cap); color:var(--dim); white-space:nowrap; }
 
-  /* ---------- 提示条 ---------- */
-  .toast {
-    display:none; align-items:center; gap:10px; background:#e8f6ee; color:#0f7a4c;
-    border-radius:12px; padding:11px 14px; font-size:14.5px; margin-bottom:14px;
-    animation:in .2s ease;
+  /* ---------- toast / 错误条 ---------- */
+  #toast {
+    position:fixed; left:50%; top:18px; transform:translate(-50%,-12px);
+    max-width:min(92vw,560px); z-index:80; display:flex; align-items:center; gap:10px;
+    background:#20342A; color:#CFEFDC; border:1px solid rgba(76,175,125,.38);
+    border-radius:var(--r-md); padding:11px 16px; font-size:14px;
+    opacity:0; pointer-events:none; transition:opacity 200ms ease-out, transform 200ms ease-out;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
   }
-  .toast.on { display:flex; }
-  .toast .ck { font-size:15px; }
-  @keyframes in { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+  #toast.on { opacity:1; transform:translate(-50%,0); }
+  #toast .ck { color:var(--ok); font-weight:700; }
 
   .errbar {
-    display:none; background:#fdecea; color:#a3271b; border-radius:12px;
-    padding:11px 14px; font-size:14px; margin-bottom:14px;
+    display:none; background:rgba(217,84,77,.12); color:#F3B6B2;
+    border:1px solid rgba(217,84,77,.32); border-radius:var(--r-md);
+    padding:11px 14px; font-size:14px; margin-bottom:14px; line-height:1.6;
   }
   .errbar.on { display:block; }
 
   /* ---------- 收图区 ---------- */
   .drop {
-    background:var(--card); border:2px dashed var(--line); border-radius:18px;
-    padding:34px 20px; text-align:center; cursor:pointer;
-    transition:border-color .15s, background .15s;
+    background:var(--surface); border:2px dashed rgba(255,255,255,.14);
+    border-radius:var(--r-lg); padding:34px 20px; text-align:center; cursor:pointer;
+    transition:border-color var(--motion), background var(--motion);
   }
-  .drop:hover { border-color:#c3ccdb; }
-  .drop.over { border-color:var(--accent); background:var(--accent-soft); }
+  .drop:hover { border-color:rgba(233,180,76,.4); }
+  .drop.over { border-color:var(--accent); background:rgba(233,180,76,.07); }
   .drop .ic {
-    width:54px; height:54px; margin:0 auto 13px; border-radius:50%;
-    background:var(--accent-soft); color:var(--accent);
-    display:flex; align-items:center; justify-content:center; font-size:29px; font-weight:300;
+    width:54px; height:54px; margin:0 auto 14px; border-radius:var(--r-full);
+    background:rgba(62,122,94,.28); color:#B9E3CC;
+    display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:300;
   }
   .drop .t1 { font-size:17px; font-weight:600; margin-bottom:6px; }
-  .drop .t2 { font-size:13.5px; color:var(--dim); line-height:1.7; }
+  .drop .t2 { font-size:var(--f-cap); color:var(--text2); line-height:1.8; }
   .drop kbd {
-    font-family:inherit; background:#eef1f6; border:1px solid var(--line);
-    border-radius:5px; padding:1px 6px; font-size:12.5px; color:#4d5666;
+    font-family:inherit; background:var(--raised); border:1px solid var(--line);
+    border-radius:5px; padding:1px 6px; font-size:var(--f-min); color:var(--text2);
   }
   input[type=file] { display:none; }
 
-  .thumbs { display:none; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; margin-top:12px; }
+  .hintbar { display:none; font-size:var(--f-cap); color:#F3B6B2; margin-top:10px; line-height:1.6; }
+  .hintbar.on { display:block; }
+
+  .thumbs { display:none; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:10px; }
   .thumbs.on { display:grid; }
-  .thumb { position:relative; aspect-ratio:1/1; border-radius:12px; overflow:hidden; background:#e9ecf2; }
+  .thumb { position:relative; aspect-ratio:1/1; border-radius:var(--r-md); overflow:hidden; background:var(--raised); }
   .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
   .thumb .x {
-    position:absolute; top:5px; right:5px; width:24px; height:24px; border-radius:50%;
-    background:rgba(0,0,0,.55); color:#fff; border:0; font-size:15px; line-height:24px;
+    position:absolute; top:5px; right:5px; width:26px; height:26px; border-radius:var(--r-full);
+    background:rgba(0,0,0,.62); color:#fff; border:0; font-size:16px; line-height:26px;
     text-align:center; cursor:pointer;
   }
   .thumb .n {
-    position:absolute; left:5px; bottom:5px; background:rgba(0,0,0,.55); color:#fff;
-    font-size:11px; padding:1px 6px; border-radius:6px;
+    position:absolute; left:5px; bottom:5px; background:rgba(0,0,0,.62); color:#fff;
+    font-size:var(--f-min); padding:1px 7px; border-radius:6px; font-variant-numeric:tabular-nums;
   }
 
+  /* ---------- 表单 ---------- */
   .field { margin-top:18px; }
-  .field label { display:block; font-size:13.5px; color:var(--dim); margin-bottom:8px; }
+  .field label { display:block; font-size:var(--f-cap); color:var(--text2); margin-bottom:8px; }
   textarea {
     width:100%; min-height:76px; resize:vertical; padding:13px;
-    border:1px solid var(--line); border-radius:14px; background:var(--card);
-    font-family:inherit; font-size:16px; line-height:1.6; color:var(--text);
-    outline:none; transition:border-color .15s;
+    border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface);
+    font-size:var(--f-body); line-height:1.6; color:var(--text);
+    outline:none; transition:border-color var(--motion);
   }
-  textarea:focus { border-color:var(--accent); }
-  textarea::placeholder { color:#a9b2c1; }
+  textarea::placeholder { color:var(--dim); }
+  textarea:focus { border-color:rgba(233,180,76,.55); }
 
   .row { display:flex; gap:10px; margin-top:12px; }
   .row .item {
-    flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px;
+    flex:1; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-md);
     padding:10px 14px; display:flex; align-items:center; gap:10px;
   }
-  .row .item span { font-size:13px; color:var(--dim); white-space:nowrap; }
+  .row .item span { font-size:var(--f-cap); color:var(--text2); white-space:nowrap; }
   .row .item input {
-    border:0; background:transparent; font-family:inherit; font-size:15px;
-    color:var(--text); outline:none; width:100%;
+    border:0; background:transparent; font-size:var(--f-body); color:var(--text);
+    outline:none; width:100%; color-scheme:dark;
   }
 
+  /* ---------- 主按钮 ---------- */
   .submit {
-    position:fixed; left:0; right:0; bottom:0; padding:12px 18px calc(12px + env(safe-area-inset-bottom));
-    background:linear-gradient(transparent, var(--bg) 34%);
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(transparent, var(--bg) 36%);
   }
   .submit button {
-    width:100%; max-width:680px; margin:0 auto; display:block;
-    height:54px; border:0; border-radius:15px; background:var(--accent); color:#fff;
-    font-size:17px; font-weight:600; font-family:inherit; cursor:pointer;
-    box-shadow:0 6px 18px rgba(31,111,224,.26); transition:opacity .15s, transform .1s;
+    position:relative; overflow:hidden;
+    width:100%; max-width:720px; margin:0 auto; display:block;
+    height:54px; border:0; border-radius:var(--r-md);
+    background:var(--accent); color:var(--accent-ink);
+    font-size:17px; font-weight:700; cursor:pointer;
+    transition:opacity var(--motion), background var(--motion), transform 100ms ease-out;
   }
   .submit button:active { transform:scale(.99); }
-  .submit button:disabled { opacity:.42; box-shadow:none; }
-  .submit button.sending { opacity:.7; }
+  .submit button:disabled { opacity:.4; cursor:default; }
+  .submit button.uploading { opacity:.85; cursor:default; }
+  .submit button.retry { background:var(--err); color:#fff; }
+  .submit button::after {
+    content:""; position:absolute; left:0; bottom:0; height:3px;
+    width:var(--p,0%); background:rgba(26,18,6,.35);
+    transition:width 150ms linear;
+  }
+  .submit button.retry::after { width:0; }
 
   /* ---------- 最近上传 ---------- */
   .recent { margin-top:30px; }
-  .recent .h {
-    display:flex; align-items:center; margin-bottom:10px;
-    font-size:13.5px; color:var(--dim);
-  }
+  .recent .h { display:flex; align-items:center; margin-bottom:10px; font-size:var(--f-cap); color:var(--text2); }
   .recent .h .rf {
-    margin-left:auto; background:none; border:0; color:var(--accent);
-    font-size:13px; font-family:inherit; cursor:pointer; padding:4px;
+    margin-left:auto; background:none; border:0; color:var(--dim);
+    font-size:var(--f-cap); cursor:pointer; padding:4px 2px;
   }
+  .recent .h .rf:hover { color:var(--text2); }
+
   .task {
-    display:flex; align-items:center; gap:12px; padding:12px 14px;
-    background:var(--card); border-radius:14px; margin-bottom:8px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:12px 14px; background:var(--surface);
+    border:1px solid var(--line); border-radius:var(--r-md); margin-bottom:8px;
   }
+  .task .info { flex:1; min-width:150px; }
   .task .t { font-size:14.5px; font-variant-numeric:tabular-nums; }
-  .task .c { font-size:12.5px; color:var(--dim); }
+  .task .c { font-size:var(--f-min); color:var(--dim); margin-top:2px; font-variant-numeric:tabular-nums; }
   .task .st {
-    margin-left:auto; font-size:12.5px; padding:3px 9px; border-radius:99px; white-space:nowrap;
+    font-size:var(--f-min); padding:4px 9px; border-radius:var(--r-full); white-space:nowrap;
+    border:1px solid transparent;
   }
-  .st.pending { background:#fdf3e3; color:var(--warn); }
-  .st.done    { background:#e8f6ee; color:var(--ok); }
-  .st.failed  { background:#fdecea; color:var(--err); }
-  .task .redo {
-    margin-left:10px; background:none; border:1px solid var(--line); border-radius:9px;
-    color:#4a5464; font-size:12.5px; font-family:inherit; padding:5px 10px; cursor:pointer;
+  .st.proc { background:rgba(255,255,255,.07); color:var(--text2); border-color:var(--line); }
+  .st.done { background:rgba(76,175,125,.14); color:#8BDBAC; border-color:rgba(76,175,125,.3); }
+  .st.failed { background:rgba(217,84,77,.14); color:#F0A8A3; border-color:rgba(217,84,77,.32); }
+
+  .task .btn {
+    background:transparent; border:1px solid var(--line); border-radius:var(--r-sm);
+    color:var(--text2); font-size:var(--f-min); padding:6px 11px; cursor:pointer;
+    transition:border-color var(--motion), color var(--motion), background var(--motion);
+    white-space:nowrap;
   }
-  .emptyline { font-size:13.5px; color:#a9b2c1; text-align:center; padding:14px 0; }
-  .demoTag { font-size:11px; color:#a2abb9; text-align:center; margin-top:18px; display:none; }
-  .demoTag.on { display:block; }
+  .task .btn:hover { border-color:rgba(255,255,255,.24); color:var(--text); }
+  .task .btn:disabled { opacity:.5; cursor:default; }
+  .task .btn.danger { border-color:rgba(217,84,77,.6); color:#F3B6B2; background:rgba(217,84,77,.1); }
+
+  .emptyline { font-size:var(--f-cap); color:var(--dim); text-align:center; padding:18px 0; }
+
+  /* ---------- 设置 ---------- */
+  .settings { margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
+  .settings summary {
+    list-style:none; cursor:pointer; font-size:var(--f-min); color:var(--dim);
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .settings summary::-webkit-details-marker { display:none; }
+  .settings summary:hover { color:var(--text2); }
+  .settings .setrow { display:flex; gap:8px; margin-top:10px; }
+  .settings input {
+    flex:1; min-width:0; background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--r-sm); padding:9px 11px; font-size:var(--f-min); color:var(--text); outline:none;
+  }
+  .settings input:focus { border-color:rgba(233,180,76,.5); }
+  .settings .save {
+    background:var(--raised); border:1px solid var(--line); border-radius:var(--r-sm);
+    color:var(--text2); font-size:var(--f-min); padding:0 14px; cursor:pointer;
+  }
+  .sethint { font-size:var(--f-min); color:var(--dim); margin-top:8px; line-height:1.7; }
+
+  /* ---------- 演示徽章 ---------- */
+  #demoBadge {
+    position:fixed; left:14px; bottom:calc(82px + env(safe-area-inset-bottom)); z-index:70; display:none;
+    font-size:var(--f-min); color:var(--warn); background:rgba(233,162,59,.12);
+    border:1px solid rgba(233,162,59,.34); border-radius:var(--r-full); padding:4px 11px;
+  }
+  #demoBadge.on { display:block; }
+
+  @media (max-width:420px) {
+    header h1 { font-size:20px; }
+    .wrap { padding:18px 16px 128px; }
+    .task .info { min-width:120px; }
+  }
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header>
-    <h1>上传作业</h1>
-    <div class="date" id="todayTxt"></div>
+    <h1>家里的田字格</h1>
+    <span class="kind">作业上传</span>
+    <span class="date" id="todayTxt"></span>
   </header>
 
-  <div class="toast" id="toast"><span class="ck">✓</span><span id="toastTxt"></span></div>
   <div class="errbar" id="errbar"></div>
 
   <div class="drop" id="drop">
     <div class="ic">+</div>
-    <div class="t1">粘贴、拖入或点这里选择</div>
+    <div class="t1">把作业照片放进来</div>
     <div class="t2">
-      截图后直接按 <kbd>⌘</kbd> <kbd>V</kbd> 贴进来，可以贴多张<br>
-      电脑上也可以把图片直接拖到这个框里
+      截图后按 <kbd>⌘</kbd> <kbd>V</kbd> 直接粘贴，可以贴多张<br>
+      也可以把图片拖进来，或点这里选择
     </div>
     <input type="file" id="file" accept="image/*" multiple>
   </div>
 
   <div class="thumbs" id="thumbs"></div>
+  <div class="hintbar" id="hintbar"></div>
 
   <div class="field">
     <label>老师说的话（可不填）</label>
-    <textarea id="note" placeholder="比如：今天作业在黑板上了，数学要带尺子"></textarea>
+    <textarea id="note" placeholder="比如：今天作业在黑板上了，数学要带尺子" maxlength="500"></textarea>
   </div>
 
   <div class="row">
@@ -174,197 +246,608 @@
   </div>
 
   <div class="recent">
-    <div class="h"><span>最近上传</span><button class="rf" id="refreshBtn">刷新</button></div>
+    <div class="h"><span>最近上传</span><button class="rf" id="refreshBtn" type="button">刷新</button></div>
     <div id="tasks"><div class="emptyline">还没有上传过</div></div>
   </div>
 
-  <div class="demoTag" id="demoTag">演示模式：没有连上 NAS，数据是页面模拟的</div>
+  <details class="settings" id="settings">
+    <summary>服务地址</summary>
+    <div class="setrow">
+      <input id="baseIn" type="text" inputmode="url" autocomplete="off" placeholder="留空即可，例如 http://192.168.1.5:8080">
+      <button class="save" id="baseSave" type="button">保存</button>
+    </div>
+    <div class="sethint">页面由 NAS 托管时留空就能用。本地直接打开（file://）时，填 NAS 的地址。</div>
+  </details>
 </div>
 
-<div class="submit"><button id="send" disabled>上传</button></div>
+<div class="submit"><button id="send" type="button" disabled>上传</button></div>
+<div id="toast"><span class="ck">✓</span><span id="toastTxt"></span></div>
+<div id="demoBadge">演示数据</div>
 
 <script>
 (function () {
+  'use strict';
+
+  /* ================= 基础状态 ================= */
+  var LIMIT = 6;
+  var MAX_SIZE = 20 * 1024 * 1024;
+  var BASE_KEY = 'tzg.base';
+  var POLL_MS = 3000;
+
   var files = [];
-  var demo = /[?&]demo=1/.test(location.search) || location.protocol === 'file:';
-  var demoTasks = [];
+  var state = { uploading:false, pct:0, failed:false };
+  var batches = [];
+  var lastSig = '';
+  var pollTimer = null;
   var toastTimer = null;
+  var hintTimer = null;
+  var base = '';
+  var mock = /[?&]mock=1/.test(location.search);
+  var mockAuto = false;
 
-  var dropEl = document.getElementById('drop'), fileEl = document.getElementById('file');
-  var thumbs = document.getElementById('thumbs'), noteEl = document.getElementById('note');
-  var dateEl = document.getElementById('date'), sendBtn = document.getElementById('send');
-  var toastEl = document.getElementById('toast'), toastTx = document.getElementById('toastTxt');
-  var errEl = document.getElementById('errbar'), tasksEl = document.getElementById('tasks');
+  try { base = localStorage.getItem(BASE_KEY) || ''; } catch (e) { base = ''; }
+  base = normalizeBase(base);
 
-  var d = new Date();
-  var ymd = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  dateEl.value = ymd;
-  document.getElementById('todayTxt').textContent =
-    (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + '周' + '日一二三四五六'[d.getDay()];
+  function normalizeBase(v) {
+    v = String(v || '').trim();
+    if (!v) return '';
+    if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
+    return v.replace(/\/+$/, '');
+  }
+  function api(path) { return base + path; }
 
+  var dropEl = document.getElementById('drop');
+  var fileEl = document.getElementById('file');
+  var thumbsEl = document.getElementById('thumbs');
+  var hintEl = document.getElementById('hintbar');
+  var noteEl = document.getElementById('note');
+  var dateEl = document.getElementById('date');
+  var sendBtn = document.getElementById('send');
+  var errEl = document.getElementById('errbar');
+  var tasksEl = document.getElementById('tasks');
+  var toastEl = document.getElementById('toast');
+  var toastTx = document.getElementById('toastTxt');
+  var demoBadge = document.getElementById('demoBadge');
+  var baseIn = document.getElementById('baseIn');
+
+  baseIn.value = base;
+
+  /* ================= 日期 ================= */
   function pad(n) { return String(n).padStart(2, '0'); }
-
-  /* ---------------- 收图 ---------------- */
-  function addFiles(list) {
-    for (var i = 0; i < list.length; i++) {
-      if (!list[i] || list[i].type.indexOf('image/') !== 0) continue;
-      if (files.length >= 6) break;
-      files.push(list[i]);
-    }
-    paint();
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayYmd() { return ymd(new Date()); }
+  function parseYmd(s) {
+    if (!s) return null;
+    var p = String(s).split('-');
+    if (p.length !== 3) return null;
+    return new Date(+p[0], +p[1] - 1, +p[2], 12, 0, 0);
+  }
+  function addDays(s, n) {
+    var d = parseYmd(s); if (!d) return s;
+    d.setDate(d.getDate() + n);
+    return ymd(d);
+  }
+  function hmOf(iso) {
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return '';
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function labelDate(s) {
+    var d = parseYmd(s); if (!d) return s || '';
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
   }
 
-  function paint() {
-    thumbs.innerHTML = '';
-    files.forEach(function (f, i) {
-      var box = document.createElement('div'); box.className = 'thumb';
-      var img = document.createElement('img'); img.src = URL.createObjectURL(f);
-      var x = document.createElement('button'); x.className = 'x'; x.textContent = '×';
-      x.onclick = function (e) { e.stopPropagation(); files.splice(i, 1); paint(); };
-      var n = document.createElement('div'); n.className = 'n'; n.textContent = i + 1;
-      box.appendChild(img); box.appendChild(n); box.appendChild(x);
-      thumbs.appendChild(box);
-    });
-    thumbs.classList.toggle('on', files.length > 0);
-    dropEl.style.display = files.length ? 'none' : 'block';
-    sendBtn.disabled = files.length === 0;
-    sendBtn.textContent = files.length ? '上传 ' + files.length + ' 张' : '上传';
-  }
+  var now = new Date();
+  dateEl.value = ymd(now);
+  document.getElementById('todayTxt').textContent =
+    (now.getMonth() + 1) + '月' + now.getDate() + '日 周' + '日一二三四五六'[now.getDay()];
 
-  dropEl.onclick = function () { fileEl.click(); };
-  fileEl.onchange = function () { addFiles(fileEl.files); fileEl.value = ''; };
-
-  ['dragenter', 'dragover'].forEach(function (ev) {
-    document.addEventListener(ev, function (e) {
-      if (!e.dataTransfer || files.length) return;
-      e.preventDefault(); dropEl.classList.add('over');
-    });
-  });
-  document.addEventListener('dragleave', function () { dropEl.classList.remove('over'); });
-  document.addEventListener('drop', function (e) {
-    dropEl.classList.remove('over');
-    if (!e.dataTransfer) return;
-    e.preventDefault(); addFiles(e.dataTransfer.files);
-  });
-  document.addEventListener('paste', function (e) {
-    if (!e.clipboardData) return;
-    var got = [];
-    for (var i = 0; i < e.clipboardData.items.length; i++) {
-      var it = e.clipboardData.items[i];
-      if (it.kind === 'file') { var f = it.getAsFile(); if (f) got.push(f); }
-    }
-    if (got.length) { e.preventDefault(); addFiles(got); }
-  });
-
-  /* ---------------- 提交 ---------------- */
+  /* ================= 提示 ================= */
   function toast(msg) {
     toastTx.textContent = msg;
     toastEl.classList.add('on');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 6000);
   }
-  function err(msg) { errEl.textContent = msg; errEl.classList.add('on'); setTimeout(function () { errEl.classList.remove('on'); }, 6000); }
+  function showErr(msg) {
+    errEl.textContent = msg;
+    errEl.classList.add('on');
+  }
+  function clearErr() { errEl.textContent = ''; errEl.classList.remove('on'); }
+  function showHint(msg) {
+    hintEl.textContent = msg;
+    hintEl.classList.add('on');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () { hintEl.classList.remove('on'); }, 7000);
+  }
 
-  sendBtn.onclick = function () {
-    if (!files.length) return;
-    var n = files.length;
-    sendBtn.classList.add('sending');
-    sendBtn.disabled = true;
+  /* ================= 选图 ================= */
+  function addFiles(list) {
+    var oversize = 0, notImage = 0, overflow = 0;
+    for (var i = 0; i < list.length; i++) {
+      var f = list[i];
+      if (!f) continue;
+      if (!/^image\//.test(f.type)) { notImage++; continue; }
+      if (files.length >= LIMIT) { overflow++; continue; }
+      if (f.size > MAX_SIZE) { oversize++; continue; }
+      files.push(f);
+    }
+    var msgs = [];
+    if (overflow) msgs.push('一次最多 ' + LIMIT + ' 张，多出来的没加进来');
+    if (oversize) msgs.push('有 ' + oversize + ' 张超过 20MB，没加进来');
+    if (notImage) msgs.push('有 ' + notImage + ' 个文件不是图片，没加进来');
+    if (msgs.length) showHint(msgs.join(' · ')); else hintEl.classList.remove('on');
 
-    if (demo) {
-      setTimeout(function () {
-        var now = new Date();
-        demoTasks.unshift({
-          id: Date.now(), count: n,
-          time: pad(now.getHours()) + ':' + pad(now.getMinutes()),
-          status: 'pending'
-        });
-        done(n);
-        setTimeout(function () { demoTasks[0].status = 'done'; paintTasks(); }, 8000);
-      }, 700);
+    if (files.length) { state.failed = false; clearErr(); }
+    paint();
+  }
+
+  function removeFile(i) {
+    files.splice(i, 1);
+    state.failed = false;
+    paint();
+  }
+
+  function paint() {
+    thumbsEl.textContent = '';
+    files.forEach(function (f, i) {
+      var box = document.createElement('div');
+      box.className = 'thumb';
+
+      var img = document.createElement('img');
+      img.src = URL.createObjectURL(f);
+      img.alt = f.name || '图片 ' + (i + 1);
+
+      var n = document.createElement('div');
+      n.className = 'n';
+      n.textContent = i + 1;
+
+      var x = document.createElement('button');
+      x.className = 'x';
+      x.type = 'button';
+      x.textContent = '×';
+      x.setAttribute('aria-label', '移除这张');
+      x.onclick = function (e) { e.stopPropagation(); removeFile(i); };
+
+      box.appendChild(img); box.appendChild(n); box.appendChild(x);
+      thumbsEl.appendChild(box);
+    });
+    thumbsEl.classList.toggle('on', files.length > 0);
+    dropEl.style.display = files.length ? 'none' : 'block';
+    refreshBtn();
+  }
+
+  function refreshBtn() {
+    sendBtn.classList.remove('retry', 'uploading');
+    sendBtn.style.setProperty('--p', '0%');
+    if (state.uploading) {
+      sendBtn.disabled = true;
+      sendBtn.classList.add('uploading');
+      sendBtn.textContent = '上传中 ' + state.pct + '%';
+      sendBtn.style.setProperty('--p', state.pct + '%');
       return;
     }
+    if (state.failed && files.length) {
+      sendBtn.disabled = false;
+      sendBtn.classList.add('retry');
+      sendBtn.textContent = '没传上去，点这里重试';
+      return;
+    }
+    sendBtn.disabled = files.length === 0;
+    sendBtn.textContent = files.length ? '上传 ' + files.length + ' 张' : '上传';
+  }
+
+  /* 三个入口：点选 / 拖拽 / 粘贴 */
+  dropEl.onclick = function () { fileEl.click(); };
+  fileEl.onchange = function () { addFiles(fileEl.files); fileEl.value = ''; };
+
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (!e.dataTransfer) return;
+      e.preventDefault();
+      if (!files.length) dropEl.classList.add('over');
+    });
+  });
+  document.addEventListener('dragleave', function (e) {
+    if (e.relatedTarget === null) dropEl.classList.remove('over');
+  });
+  document.addEventListener('drop', function (e) {
+    dropEl.classList.remove('over');
+    if (!e.dataTransfer) return;
+    e.preventDefault();
+    addFiles(e.dataTransfer.files);
+  });
+  document.addEventListener('paste', function (e) {
+    if (!e.clipboardData) return;
+    var got = [];
+    for (var i = 0; i < e.clipboardData.items.length; i++) {
+      var it = e.clipboardData.items[i];
+      if (it.kind === 'file') {
+        var f = it.getAsFile();
+        if (f) got.push(f);
+      }
+    }
+    if (got.length) { e.preventDefault(); addFiles(got); }
+  });
+
+  /* ================= HTTP ================= */
+  function parseErr(x) {
+    var msg = '';
+    try {
+      var body = JSON.parse(x.responseText);
+      if (body && body.error && body.error.message) msg = body.error.message;
+    } catch (e) { /* 非 JSON */ }
+    if (msg) return msg;
+    if (x.status === 400) return '这次没传上去：请求不太对，检查一下日期和图片';
+    if (x.status === 413) return '这次没传上去：单张图片不能超过 20MB';
+    if (x.status === 415) return '这次没传上去：只接受 jpg / png / heic / webp';
+    if (x.status === 404) return '这次没传上去：服务地址可能不对';
+    if (x.status >= 500) return '这次没传上去：NAS 那边出错了，等一会儿再试';
+    return '这次没传上去（' + x.status + '），点重试再来一次';
+  }
+
+  function getJSON(path, timeout) {
+    return new Promise(function (resolve, reject) {
+      var x = new XMLHttpRequest();
+      x.open('GET', api(path), true);
+      x.timeout = timeout || 8000;
+      x.onload = function () {
+        if (x.status >= 200 && x.status < 300) {
+          var d = null;
+          try { d = x.responseText ? JSON.parse(x.responseText) : null; } catch (e) { d = null; }
+          resolve(d);
+        } else {
+          reject({ status: x.status, message: parseErr(x) });
+        }
+      };
+      x.onerror = function () { reject({ status: 0, message: '连不上 NAS，检查服务地址或网络' }); };
+      x.ontimeout = function () { reject({ status: 0, message: '等太久没回应，稍后点重试' }); };
+      x.send();
+    });
+  }
+
+  function sendJSON(method, path) {
+    return new Promise(function (resolve, reject) {
+      var x = new XMLHttpRequest();
+      x.open(method, api(path), true);
+      x.timeout = 10000;
+      x.onload = function () {
+        if (x.status >= 200 && x.status < 300) {
+          var d = null;
+          try { d = x.responseText ? JSON.parse(x.responseText) : null; } catch (e) { d = null; }
+          resolve(d);
+        } else {
+          reject({ status: x.status, message: parseErr(x) });
+        }
+      };
+      x.onerror = function () { reject({ status: 0, message: '连不上 NAS，检查服务地址或网络' }); };
+      x.ontimeout = function () { reject({ status: 0, message: 'NAS 一直没有回应，请稍后再试' }); };
+      x.send();
+    });
+  }
+
+  function uploadXHR(fd, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var x = new XMLHttpRequest();
+      x.open('POST', api('/api/ingest'), true);
+      x.timeout = 30000;
+      x.upload.onprogress = function (e) {
+        if (e.lengthComputable) onProgress(Math.min(99, Math.round(e.loaded / e.total * 100)));
+      };
+      x.onload = function () {
+        if (x.status >= 200 && x.status < 300) {
+          var d = null;
+          try { d = JSON.parse(x.responseText); } catch (e) { d = null; }
+          if (!d || !d.batch_id) { reject({ status: x.status, message: '服务返回的内容看不懂，点重试再来一次' }); return; }
+          onProgress(100);
+          resolve(d);
+        } else {
+          reject({ status: x.status, message: parseErr(x) });
+        }
+      };
+      x.onerror = function () { reject({ status: 0, message: '没传上去：连不上 NAS，检查是不是同一个 Wi-Fi' }); };
+      x.ontimeout = function () { reject({ status: 0, message: '没传上去：等了 30 秒还没回应，点重试再来一次' }); };
+      x.send(fd);
+    });
+  }
+
+  /* ================= 上传 ================= */
+  function submit() {
+    if (state.uploading || !files.length) return;
+    if (!dateEl.value) { showErr('先选一下这是哪天的作业'); return; }
+
+    var n = files.length;
+    state.uploading = true;
+    state.pct = 0;
+    state.failed = false;
+    clearErr();
+    refreshBtn();
 
     var fd = new FormData();
-    files.forEach(function (f) { fd.append('files[]', f, f.name || 'shot.png'); });
+    files.forEach(function (f, i) { fd.append('files[]', f, f.name || ('shot-' + (i + 1) + '.png')); });
     fd.append('note', noteEl.value.trim());
     fd.append('date', dateEl.value);
 
-    fetch('/ingest', { method:'POST', body:fd }).then(function (r) {
-      if (!r.ok) throw new Error(r.status);
-      return r.json();
-    }).then(function () {
-      done(n);
-    }).catch(function () {
-      sendBtn.classList.remove('sending');
-      sendBtn.disabled = false;
-      err('没传上去，检查是不是连的同一个 Wi-Fi');
+    function onProgress(p) {
+      state.pct = p;
+      sendBtn.textContent = '上传中 ' + p + '%';
+      sendBtn.style.setProperty('--p', p + '%');
+    }
+
+    var job = mock
+      ? mockUpload(fd, n, onProgress)
+      : uploadXHR(fd, onProgress);
+
+    job.then(function (res) {
+      state.uploading = false;
+      state.failed = false;
+      files = [];
+      noteEl.value = '';
+      dateEl.value = todayYmd();
+      paint();
+      toast(res.duplicate_of
+        ? '这些图片之前传过了，没有重复入库'
+        : '收到 ' + (res.image_count || n) + ' 张，处理完电视上就有');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      loadList();
+    }).catch(function (err) {
+      state.uploading = false;
+      state.failed = true;
+      refreshBtn();
+      showErr(err && err.message ? err.message : '没传上去，点重试再来一次');
     });
-  };
-
-  function done(n) {
-    // 清空表单，让人可以立刻接着传下一批
-    files = []; noteEl.value = ''; paint();
-    sendBtn.classList.remove('sending');
-    toast('收到 ' + n + ' 张，处理完电视上就有');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    loadTasks();
   }
 
-  /* ---------------- 最近上传 ---------------- */
-  function loadTasks() {
-    if (demo) { paintTasks(); return; }
-    fetch('/batches?limit=6').then(function (r) { return r.json(); })
-      .then(function (d) { demoTasks = d || []; paintTasks(); })
-      .catch(function () {});
+  sendBtn.onclick = submit;
+
+  /* ================= 最近上传 ================= */
+  function statusMeta(s) {
+    if (s === 'done') return { cls: 'done', label: '已入库' };
+    if (s === 'failed') return { cls: 'failed', label: '这次没识别出来' };
+    return { cls: 'proc', label: '处理中' };
   }
 
-  function paintTasks() {
-    tasksEl.innerHTML = '';
-    if (!demoTasks.length) {
-      tasksEl.innerHTML = '<div class="emptyline">还没有上传过</div>';
+  function isProcessing(s) { return s === 'pending' || s === 'ocr' || s === 'parsing'; }
+  function needsRerun(s) { return s === 'failed'; }
+
+  function renderList() {
+    tasksEl.textContent = '';
+    if (!batches.length) {
+      var e = document.createElement('div');
+      e.className = 'emptyline';
+      e.textContent = '还没有上传过';
+      tasksEl.appendChild(e);
       return;
     }
-    demoTasks.forEach(function (t) {
-      var el = document.createElement('div');
-      el.className = 'task';
-      var label = { pending:'处理中', done:'已入库', failed:'没识别出来' }[t.status] || t.status;
-      var html = '<div><div class="t">' + (t.date || '今天') + '</div>' +
-                 '<div class="c">' + (t.time || '') + ' · ' + t.count + ' 张</div></div>' +
-                 '<div class="st ' + t.status + '">' + label + '</div>';
-      if (t.status === 'failed') {
-        html += '<button class="redo">重新识别</button>';
+    batches.forEach(function (b) {
+      var meta = statusMeta(b.status);
+      var row = document.createElement('div');
+      row.className = 'task';
+
+      var info = document.createElement('div');
+      info.className = 'info';
+      var t = document.createElement('div');
+      t.className = 't';
+      t.textContent = labelDate(b.date);
+      var c = document.createElement('div');
+      c.className = 'c';
+      c.textContent = (hmOf(b.created_at) || '') +
+        (hmOf(b.created_at) ? ' · ' : '') +
+        (b.image_count || 0) + ' 张' +
+        (b.status === 'done' && b.item_count ? ' · ' + b.item_count + ' 条' : '');
+      info.appendChild(t); info.appendChild(c);
+
+      var badge = document.createElement('span');
+      badge.className = 'st ' + meta.cls;
+      badge.textContent = meta.label;
+
+      row.appendChild(info);
+      row.appendChild(badge);
+
+      if (needsRerun(b.status)) {
+        row.appendChild(makeRerunBtn(b));
       }
-      el.innerHTML = html;
-      var rb = el.querySelector('.redo');
-      if (rb) rb.onclick = function () { rerun(t.id); };
-      tasksEl.appendChild(el);
+      row.appendChild(makeDeleteBtn(b));
+      tasksEl.appendChild(row);
     });
   }
 
-  function rerun(id) {
-    if (demo) {
-      demoTasks.forEach(function (t) { if (t.id === id) t.status = 'pending'; });
-      paintTasks();
-      setTimeout(function () {
-        demoTasks.forEach(function (t) { if (t.id === id) t.status = 'done'; });
-        paintTasks();
-      }, 4000);
-      return;
+  function makeRerunBtn(b) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn';
+    btn.textContent = '重新识别';
+    btn.onclick = function () {
+      btn.disabled = true;
+      btn.textContent = '已排上…';
+      var job = mock ? mockRerun(b.id) : sendJSON('POST', '/api/batch/' + b.id + '/rerun');
+      job.then(function () { loadList(); })
+        .catch(function (err) {
+          btn.disabled = false;
+          btn.textContent = '重新识别';
+          showErr(err && err.message ? err.message : '重新识别没成功，过一会儿再试');
+        });
+    };
+    return btn;
+  }
+
+  function makeDeleteBtn(b) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn';
+    btn.textContent = '删除';
+    var armed = false, timer = null;
+
+    function reset() {
+      armed = false;
+      clearTimeout(timer);
+      btn.textContent = '删除';
+      btn.classList.remove('danger');
+      btn.disabled = false;
     }
-    fetch('/batch/' + id + '/rerun', { method:'POST' }).then(loadTasks).catch(function () {
-      err('重跑失败');
+
+    btn.onclick = function () {
+      if (!armed) {
+        armed = true;
+        btn.textContent = '确认删除？';
+        btn.classList.add('danger');
+        timer = setTimeout(reset, 3000);
+        return;
+      }
+      clearTimeout(timer);
+      btn.disabled = true;
+      btn.textContent = '删除中';
+      var job = mock ? mockDelete(b.id) : sendJSON('DELETE', '/api/batch/' + b.id);
+      job.then(function () { loadList(); })
+        .catch(function (err) {
+          reset();
+          showErr(err && err.message ? err.message : '没删掉，过一会儿再试');
+        });
+    };
+    return btn;
+  }
+
+  function loadList(opts) {
+    var silent = !!(opts && opts.silent);
+    if (mock) { batches = mockBatches; paintFrom(batches, silent); return; }
+
+    getJSON('/api/batches?limit=6').then(function (d) {
+      batches = (d && d.batches) || [];
+      paintFrom(batches, silent);
+    }).catch(function (err) {
+      if (!mock && location.protocol === 'file:') {
+        enableMock();
+        batches = mockBatches;
+        paintFrom(batches, silent);
+        return;
+      }
+      clearTimeout(pollTimer);
+      tasksEl.textContent = '';
+      var e = document.createElement('div');
+      e.className = 'emptyline';
+      e.textContent = '读不到最近上传：' + (err && err.message ? err.message : '检查服务地址');
+      tasksEl.appendChild(e);
     });
   }
 
-  document.getElementById('refreshBtn').onclick = loadTasks;
+  function paintFrom(list, silent) {
+    var sig = JSON.stringify(list);
+    if (silent && sig === lastSig) { schedulePoll(); return; }
+    lastSig = sig;
+    renderList();
+    schedulePoll();
+  }
+
+  function schedulePoll() {
+    clearTimeout(pollTimer);
+    if (document.hidden) return;
+    var busy = batches.some(function (b) { return isProcessing(b.status); });
+    if (!busy) return;
+    pollTimer = setTimeout(function () { loadList({ silent: true }); }, POLL_MS);
+  }
+
+  document.getElementById('refreshBtn').onclick = function () { loadList(); };
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) loadTasks();
+    if (document.hidden) clearTimeout(pollTimer);
+    else loadList({ silent: true });
   });
 
-  if (demo) document.getElementById('demoTag').classList.add('on');
+  /* ================= 服务地址 ================= */
+  document.getElementById('baseSave').onclick = function () {
+    var v = normalizeBase(baseIn.value);
+    base = v;
+    baseIn.value = v;
+    try {
+      if (v) localStorage.setItem(BASE_KEY, v); else localStorage.removeItem(BASE_KEY);
+    } catch (e) { /* 隐私模式 */ }
+    lastSig = '';
+    clearErr();
+    showHint(v ? '服务地址已保存：' + v : '已改回同源地址');
+    loadList();
+  };
+
+  /* ================= Mock ================= */
+  var mockBatches = seedBatches();
+
+  function enableMock() {
+    if (mock) return;
+    mock = true;
+    mockAuto = true;
+    demoBadge.classList.add('on');
+  }
+
+  function iso(ts) {
+    var d = new Date(ts);
+    var off = -d.getTimezoneOffset();
+    var s = pad(Math.floor(Math.abs(off) / 60)) + ':' + pad(Math.abs(off) % 60);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) +
+      (off >= 0 ? '+' : '-') + s;
+  }
+
+  function seedBatches() {
+    var t = todayYmd();
+    var nowTs = Date.now();
+    return [
+      { id: 318, date: t, created_at: iso(nowTs - 18 * 60000), status: 'done', image_count: 3, item_count: 9, note: '语文、数学、英语' },
+      { id: 317, date: t, created_at: iso(nowTs - 34 * 60000), status: 'pending', image_count: 2, item_count: 0, note: null },
+      { id: 316, date: addDays(t, -1), created_at: iso(nowTs - 26 * 3600000), status: 'failed', image_count: 1, item_count: 0, note: null, error: '识别服务连接超时' }
+    ];
+  }
+
+  function mockUpload(fd, count, onProgress) {
+    return new Promise(function (resolve) {
+      var p = 0;
+      var iv = setInterval(function () {
+        p = Math.min(94, p + 9 + Math.floor(Math.random() * 14));
+        onProgress(p);
+      }, 110);
+      setTimeout(function () {
+        clearInterval(iv);
+        onProgress(100);
+        var date = '';
+        try { date = fd.get('date') || todayYmd(); } catch (e) { date = todayYmd(); }
+        var batch = {
+          id: 400 + Math.floor(Math.random() * 90),
+          date: date,
+          created_at: iso(Date.now()),
+          status: 'pending',
+          image_count: count,
+          item_count: 0,
+          note: null
+        };
+        mockBatches.unshift(batch);
+        setTimeout(function () { batch.status = 'ocr'; }, 5000);
+        setTimeout(function () { batch.status = 'done'; batch.item_count = count * 2; }, 12000);
+        resolve({ batch_id: batch.id, status: 'pending', date: date, image_count: count, duplicate_of: null });
+      }, 850);
+    });
+  }
+
+  function mockRerun(id) {
+    return new Promise(function (resolve) {
+      mockBatches.forEach(function (b) { if (b.id === id) { b.status = 'pending'; b.item_count = 0; } });
+      setTimeout(function () {
+        mockBatches.forEach(function (b) { if (b.id === id) { b.status = 'done'; b.item_count = 3; } });
+      }, 5000);
+      resolve({ id: id, status: 'pending' });
+    });
+  }
+
+  function mockDelete(id) {
+    return new Promise(function (resolve) {
+      mockBatches = mockBatches.filter(function (b) { return b.id !== id; });
+      resolve(null);
+    });
+  }
+
+  /* ================= 启动 ================= */
+  if (mock) {
+    mockAuto = false;
+    demoBadge.classList.add('on');
+  }
   paint();
-  loadTasks();
+  loadList();
 })();
 </script>
 </body>

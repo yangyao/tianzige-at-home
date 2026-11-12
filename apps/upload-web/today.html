@@ -3,317 +3,980 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>今天的作业</title>
+<title>今天的作业 · 家里的田字格</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    /* 设计 token，见 design/tokens.json */
+    --bg:#14181C; --surface:#1D2329; --raised:#262E36;
+    --text:#F2F5F8; --text2:#A8B2BE; --dim:#6F7B88;
+    --accent:#E9B44C; --accent-ink:#1A1206; --brand:#3E7A5E; --flower:#D9544D;
+    --ok:#4CAF7D; --warn:#E9A23B; --err:#D9544D;
+    --line:rgba(255,255,255,.09);
+    --r-sm:8px; --r-md:12px; --r-lg:20px; --r-full:999px;
+    --tv-display:72px; --tv-h1:52px; --tv-h2:42px; --tv-body:34px; --tv-cap:25px; --tv-min:22px;
+    --motion:120ms ease-out;
+  }
   html, body {
-    height:100%;
-    background:#0d0f12;
-    color:#eef1f6;
-    font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
-    overflow:hidden;
-    -webkit-user-select:none;
-    user-select:none;
+    height:100%; background:var(--bg); color:var(--text); overflow:hidden;
+    font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    -webkit-user-select:none; user-select:none; -webkit-font-smoothing:antialiased;
   }
-  body { padding:48px 56px; display:flex; flex-direction:column; }
+  /* 固定 1920×1080 画布，等比缩放适配任意屏幕 */
+  #stage {
+    position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+    margin:-540px 0 0 -960px; transform-origin:center center;
+  }
+  .tv {
+    width:1920px; height:1080px; background:var(--bg); color:var(--text);
+    position:relative; overflow:hidden; display:flex; flex-direction:column;
+    padding:48px 60px 0;
+  }
 
-  /* ---------- 顶部 ---------- */
-  header { display:flex; align-items:baseline; gap:24px; margin-bottom:36px; flex:none; }
-  header h1 { font-size:64px; font-weight:700; letter-spacing:2px; }
-  header .date { font-size:32px; color:#8b95a8; }
-  header .hint { margin-left:auto; font-size:24px; color:#68718a; }
+  /* ---------------- 顶栏 ---------------- */
+  .topbar { display:flex; align-items:flex-end; gap:24px; height:96px; flex:none; }
+  .topbar h1 { font-size:var(--tv-h1); font-weight:700; letter-spacing:1px; line-height:1; }
+  .topbar .sub { font-size:var(--tv-cap); color:var(--text2); padding-bottom:6px; }
+  .topbar .right { margin-left:auto; display:flex; align-items:center; gap:14px; padding-bottom:6px; }
+  .chip {
+    font-size:var(--tv-min); color:var(--text2); background:var(--surface);
+    border:1px solid var(--line); padding:8px 18px; border-radius:var(--r-full);
+    white-space:nowrap;
+  }
+  .chip.rel { color:#F0A8A3; background:rgba(217,84,77,.12); border-color:rgba(217,84,77,.3); }
+  .chip.stale { color:var(--warn); background:rgba(233,162,59,.1); border-color:rgba(233,162,59,.32); }
+  .chip.off { color:var(--dim); }
 
-  /* ---------- 卡片区 ---------- */
+  /* ---------------- 本周日期条 ---------------- */
+  .week { display:flex; align-items:center; gap:14px; margin-top:24px; height:104px; flex:none; }
+  .nav {
+    width:56px; height:100px; display:flex; align-items:center; justify-content:center;
+    color:var(--dim); font-size:34px; flex:none; border-radius:var(--r-md);
+    cursor:pointer; transition:color var(--motion), background var(--motion);
+  }
+  .nav:hover { color:var(--text2); background:rgba(255,255,255,.03); }
+  .days { display:flex; gap:14px; }
+  .day {
+    width:222px; height:100px; border-radius:var(--r-md); background:var(--surface);
+    border:4px solid transparent; box-shadow:inset 0 0 0 1px var(--line);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    position:relative; cursor:pointer;
+    transition:transform var(--motion), border-color var(--motion), box-shadow var(--motion), background var(--motion);
+  }
+  .day .w { font-size:var(--tv-min); color:var(--text2); line-height:1; }
+  .day .d { font-size:var(--tv-h2); font-weight:600; line-height:1.05; font-variant-numeric:tabular-nums; }
+  .day.today { background:rgba(62,122,94,.22); box-shadow:inset 0 0 0 1px rgba(62,122,94,.45); }
+  .day.today .w { color:#A9D8BF; }
+  .day.future { opacity:.55; }
+  .day.sel {
+    border-color:var(--accent); background:var(--raised);
+    box-shadow:0 0 0 8px rgba(233,180,76,.16);
+    transform:scale(1.03); z-index:2;
+  }
+  .day.sel .w { color:var(--text2); }
+  .dot {
+    position:absolute; top:10px; right:12px; width:11px; height:11px;
+    border-radius:var(--r-full); background:var(--flower);
+  }
+
+  /* ---------------- 内容区 ---------------- */
+  .content { flex:1; display:flex; gap:44px; margin-top:26px; min-height:0; }
+
+  .figure { flex:0 0 58%; min-width:0; display:flex; min-height:0; }
+  .photo {
+    flex:1; min-height:0; border-radius:var(--r-lg); overflow:hidden;
+    background:var(--surface); border:1px solid var(--line); position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo img { width:100%; height:100%; object-fit:contain; display:block; }
+  .tag {
+    position:absolute; top:18px; right:20px; font-size:var(--tv-min); color:#E7EEF7;
+    background:rgba(10,14,20,.72); padding:8px 16px; border-radius:var(--r-sm); letter-spacing:1px;
+  }
+  .ph {
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    font-size:var(--tv-cap); color:var(--dim); text-align:center; padding:24px;
+  }
+  .ph .box {
+    width:88px; height:88px; border-radius:var(--r-md); border:2px dashed rgba(255,255,255,.16);
+    display:flex; align-items:center; justify-content:center; font-size:40px; color:var(--dim);
+  }
+  .ph .t2 { font-size:var(--tv-min); color:var(--dim); }
+
+  /* 原图网格（识别中） */
   .grid {
-    flex:1; display:grid; gap:36px; align-content:start;
-    grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
-    overflow:hidden;
+    flex:1; min-height:0; display:grid; gap:18px; grid-auto-rows:1fr; padding:2px;
   }
-  .card {
-    background:#171b22;
-    border:5px solid #222836;
-    border-radius:22px;
-    padding:20px;
-    transition:transform .12s ease, border-color .12s ease, background .12s ease;
-    display:flex; flex-direction:column; gap:14px;
-    overflow:hidden;
+  .cell {
+    border:4px solid transparent; border-radius:var(--r-lg); background:var(--surface);
+    box-shadow:inset 0 0 0 1px var(--line); overflow:hidden;
+    display:flex; align-items:center; justify-content:center; min-height:0;
+    transition:border-color var(--motion), box-shadow var(--motion), transform var(--motion);
   }
-  .card.focused {
-    border-color:#4da3ff;
-    background:#1b2130;
-    transform:scale(1.03);
-    box-shadow:0 0 0 6px rgba(77,163,255,.18);
-  }
-  .thumb {
-    width:100%; height:360px; border-radius:14px; overflow:hidden;
-    background:#0a0c10; display:flex; align-items:center; justify-content:center;
-    position:relative;
-  }
-  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-  .thumb .ph { font-size:26px; color:#4b5468; letter-spacing:1px; }
-  .card .label { font-size:34px; font-weight:600; }
-  .card .sub { font-size:22px; color:#7d8799; line-height:1.5; max-height:66px; overflow:hidden; }
+  .cell img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+  .cell.cur { border-color:var(--accent); box-shadow:0 0 0 8px rgba(233,180,76,.16); transform:scale(1.01); }
+  .cell .ph { font-size:var(--tv-min); }
 
-  /* ---------- 空状态 ---------- */
+  .text { flex:1; min-width:0; display:flex; flex-direction:column; padding-top:4px; }
+  .subject { display:flex; align-items:baseline; gap:16px; }
+  .subject .name { font-size:var(--tv-h1); font-weight:700; letter-spacing:1px; }
+  .subject .idx { font-size:var(--tv-cap); color:var(--dim); }
+  .rule { height:2px; background:var(--line); margin:18px 0 26px; flex:none; }
+  .lines { flex:1; overflow:hidden; }
+  .lines p { font-size:var(--tv-h2); line-height:1.62; margin-bottom:24px; letter-spacing:.5px; }
+  .lines p .num { color:var(--accent); font-weight:600; margin-right:14px; font-variant-numeric:tabular-nums; }
+  .lines p.muted { color:var(--text2); font-size:var(--tv-body); line-height:1.7; }
+  .caption { margin-top:auto; padding-top:14px; font-size:var(--tv-cap); color:var(--dim); text-align:right; }
+  .caption em { font-style:normal; color:var(--text2); }
+
+  /* ---------------- 空状态 ---------------- */
   .empty {
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+    position:absolute; left:60px; right:60px; top:280px; bottom:66px;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:26px; text-align:center;
   }
-  .empty .big { font-size:56px; color:#39404f; font-weight:700; }
-  .empty .small { font-size:26px; color:#2f3542; }
+  .empty .big { font-size:var(--tv-display); font-weight:700; color:var(--text2); letter-spacing:2px; }
+  .empty .small { font-size:var(--tv-body); color:var(--dim); }
+  .tv.is-empty .content { visibility:hidden; }
+  .tv.is-empty .empty { display:flex; }
+  .tv.loading .content, .tv.loading .empty { opacity:.5; transition:opacity 200ms ease-out; }
 
-  /* ---------- 大图查看 ---------- */
-  #viewer {
-    position:fixed; inset:0; background:#000; display:none; z-index:50;
-    overflow:hidden; cursor:default;
+  /* ---------------- 底栏 ---------------- */
+  .foot {
+    height:66px; display:flex; align-items:center; gap:36px; flex:none;
+    font-size:var(--tv-cap); color:var(--dim);
   }
-  #viewer.on { display:block; }
-  #viewer img {
-    position:absolute; top:50%; left:50%; transform-origin:center center;
-    max-width:none; transition:transform .1s linear;
+  .foot .k { display:flex; align-items:center; gap:10px; }
+  .foot .cap {
+    background:var(--raised); border:1px solid var(--line); border-radius:var(--r-sm);
+    padding:5px 12px; font-size:var(--tv-min); color:var(--text2); min-width:44px; text-align:center;
   }
-  #vbar {
-    position:absolute; left:0; right:0; bottom:0; padding:20px 40px;
-    background:linear-gradient(transparent, rgba(0,0,0,.85));
-    font-size:26px; color:#c8d0e0; display:flex; gap:32px;
-  }
-  #vbar .k { color:#6e7a90; }
 
-  .fade { animation:fade .18s ease; }
-  @keyframes fade { from{opacity:0} to{opacity:1} }
+  /* ---------------- 全屏看图 ---------------- */
+  .viewer { position:absolute; inset:0; background:#000; display:none; z-index:30; overflow:hidden; }
+  .viewer.on { display:block; }
+  .viewer .frame { position:absolute; inset:0; overflow:hidden; }
+  .viewer img {
+    position:absolute; left:50%; top:0; width:1920px; height:auto;
+    transform:translate(-50%,0); will-change:transform; display:block;
+  }
+  .viewer .vph {
+    position:absolute; inset:0; display:none; flex-direction:column; gap:16px;
+    align-items:center; justify-content:center; color:var(--dim); font-size:var(--tv-body);
+  }
+  .viewer .bar {
+    position:absolute; left:0; right:0; bottom:0; height:88px; z-index:2;
+    background:linear-gradient(transparent, rgba(0,0,0,.92));
+    display:flex; align-items:center; justify-content:center; gap:40px;
+    font-size:var(--tv-cap); color:var(--text2);
+  }
+  .viewer .bar .k { color:var(--dim); }
+
+  /* ---------------- 演示徽章 ---------------- */
+  #demoBadge {
+    position:fixed; left:14px; top:12px; z-index:90; display:none;
+    font-size:12px; color:var(--warn); background:rgba(233,162,59,.14);
+    border:1px solid rgba(233,162,59,.34); border-radius:var(--r-full); padding:4px 11px;
+    font-family:system-ui,sans-serif;
+  }
+  #demoBadge.on { display:block; }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>今天的作业</h1>
-  <div class="date" id="dateText"></div>
-  <div class="hint" id="hint">方向键选择 · OK 看大图</div>
-</header>
+<div id="stage">
+  <div class="tv" id="tv">
 
-<div class="grid" id="grid"></div>
+    <div class="topbar">
+      <h1 id="title">今天的作业</h1>
+      <div class="sub" id="subDate"></div>
+      <div class="right">
+        <div class="chip rel" id="relChip" style="display:none"></div>
+        <div class="chip" id="syncChip">正在读取…</div>
+      </div>
+    </div>
 
-<div class="empty" id="empty" style="display:none">
-  <div class="big">今天还没有作业</div>
-  <div class="small">老师发出来后，这里会自动出现</div>
-</div>
+    <div class="week">
+      <div class="nav" id="prevWeek" title="上一周">‹</div>
+      <div class="days" id="days"></div>
+      <div class="nav" id="nextWeek" title="下一周">›</div>
+    </div>
 
-<div id="viewer">
-  <img id="vimg" alt="">
-  <div id="vbar">
-    <span><span class="k">方向键</span> 移动</span>
-    <span><span class="k">OK</span> 放大 / 还原</span>
-    <span><span class="k">返回</span> 关闭</span>
-    <span id="vpos" style="margin-left:auto"></span>
+    <div class="content">
+      <div class="figure" id="figure"></div>
+      <div class="text" id="text"></div>
+    </div>
+
+    <div class="empty" id="empty">
+      <div class="big" id="emptyBig">今天还没有作业</div>
+      <div class="small" id="emptySmall">老师发出来之后，这里会自己出现</div>
+    </div>
+
+    <div class="foot">
+      <div class="k"><span class="cap">←</span><span class="cap">→</span> 换日期</div>
+      <div class="k"><span class="cap">↑</span><span class="cap">↓</span> <span id="udHint">换科目</span></div>
+      <div class="k"><span class="cap">OK</span> 看大图</div>
+      <div class="k"><span class="cap">返回</span> 退出</div>
+    </div>
+
+    <div class="viewer" id="viewer">
+      <div class="frame">
+        <img id="vimg" alt="作业原图">
+        <div class="vph" id="vph"><span>这张图暂时打不开</span><span style="font-size:22px">可以先看文字</span></div>
+      </div>
+      <div class="bar">
+        <span><span class="k">↑ ↓</span> 滚动</span>
+        <span><span class="k">Esc</span> 退出</span>
+        <span style="color:#6F7B88">原图全屏 · 以图为准</span>
+      </div>
+    </div>
+
   </div>
 </div>
 
+<div id="demoBadge">演示数据</div>
+
 <script>
 (function () {
-  var state = { items: [], idx: 0, zoom: 1, tx: 0, ty: 0, open: false };
+  'use strict';
 
-  var grid   = document.getElementById('grid');
-  var empty  = document.getElementById('empty');
+  var BASE_KEY = 'tzg.base';
+  var base = '';
+  try { base = localStorage.getItem(BASE_KEY) || ''; } catch (e) { base = ''; }
+  base = String(base).trim().replace(/\/+$/, '');
+
+  var S = {
+    mock: /[?&]mock=1/.test(location.search),
+    mockAuto: false,
+    today: null,
+    sel: null,
+    weekStart: null,
+    day: null,
+    days: [],
+    subjIdx: 0,
+    imgIdx: 0,
+    stamp: null,
+    offline: false,
+    noData: false,
+    viewer: false,
+    vy: 0,
+    imgTouched: false   // 按过 ↑↓ 之后才在网格里标出「当前这张」
+  };
+
+  var tv = document.getElementById('tv');
+  var titleEl = document.getElementById('title');
+  var subDateEl = document.getElementById('subDate');
+  var relChip = document.getElementById('relChip');
+  var syncChip = document.getElementById('syncChip');
+  var daysEl = document.getElementById('days');
+  var figureEl = document.getElementById('figure');
+  var textEl = document.getElementById('text');
+  var emptyBig = document.getElementById('emptyBig');
+  var emptySmall = document.getElementById('emptySmall');
+  var udHint = document.getElementById('udHint');
   var viewer = document.getElementById('viewer');
-  var vimg   = document.getElementById('vimg');
-  var vpos   = document.getElementById('vpos');
+  var vimg = document.getElementById('vimg');
+  var vph = document.getElementById('vph');
+  var demoBadge = document.getElementById('demoBadge');
 
-  var today = new Date();
-  var ymd = today.getFullYear() + '-' +
-            String(today.getMonth() + 1).padStart(2, '0') + '-' +
-            String(today.getDate()).padStart(2, '0');
-  document.getElementById('dateText').textContent = ymd.replace(/-/g, ' / ');
+  /* ================= 日期工具 ================= */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayYmd() { return ymd(new Date()); }
+  function parseYmd(s) {
+    if (!s) return null;
+    var p = String(s).split('-');
+    if (p.length !== 3) return null;
+    return new Date(+p[0], +p[1] - 1, +p[2], 12, 0, 0);
+  }
+  function addDays(s, n) {
+    var d = parseYmd(s); if (!d) return s;
+    d.setDate(d.getDate() + n);
+    return ymd(d);
+  }
+  function mondayOf(s) {
+    var d = parseYmd(s); if (!d) return s;
+    var off = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - off);
+    return ymd(d);
+  }
+  function diffDays(a, b) {
+    var da = parseYmd(a), db = parseYmd(b);
+    if (!da || !db) return 0;
+    return Math.round((da - db) / 86400000);
+  }
+  function hm(d) {
+    if (!d) return '';
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function fullDate(s) {
+    var d = parseYmd(s);
+    if (!d) return '';
+    return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 星期' +
+      '日一二三四五六'[d.getDay()];
+  }
+  function shortDate(s) {
+    var d = parseYmd(s);
+    return d ? (d.getMonth() + 1) + '月' + d.getDate() + '日' : '';
+  }
 
-  /* ---------------- 取数据 ---------------- */
-  function load() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/today?date=' + ymd, true);
-    xhr.timeout = 6000;
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        try {
-          var d = JSON.parse(xhr.responseText);
-          render((d && d.items) || []);
+  /* ================= 缓存 ================= */
+  function writeCache(key, data) {
+    try { sessionStorage.setItem('tzg:' + key, JSON.stringify({ ts: Date.now(), data: data })); } catch (e) {}
+  }
+  function readCache(key) {
+    try {
+      var raw = sessionStorage.getItem('tzg:' + key);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      return (o && o.data) ? o : null;
+    } catch (e) { return null; }
+  }
+
+  /* ================= 取数据 ================= */
+  function url(path) { return base + path; }
+
+  function getJSON(path) {
+    if (S.mock) return Promise.resolve(mockGet(path));
+    return new Promise(function (resolve, reject) {
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 6000);
+      fetch(url(path), ctrl ? { signal: ctrl.signal } : {}).then(function (r) {
+        clearTimeout(timer);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(resolve).catch(function (err) {
+        clearTimeout(timer);
+        if (location.protocol === 'file:' && !S.mock) {
+          enableMock();
+          resolve(mockGet(path));
           return;
-        } catch (e) {}
-      }
-      render(demo());
-    };
-    xhr.onerror = xhr.ontimeout = function () { render(demo()); };
-    xhr.send();
-  }
-
-  // 后端没起时用这个，方便先看版式
-  function demo() {
-    return [
-      { url: '', ocr: '语文：第 32 页 第 1-5 题，朗读课文三遍并背第一段。' },
-      { url: '', ocr: '数学：练习册 P18，口算本一页，家长签字。' },
-      { url: '', ocr: '英语：跟读 Unit 4 音频，抄写单词 each、both、never 各三遍。' }
-    ];
-  }
-
-  /* ---------------- 渲染 ---------------- */
-  function render(items) {
-    state.items = items;
-    state.idx = 0;
-    grid.innerHTML = '';
-
-    if (!items.length) {
-      grid.style.display = 'none';
-      empty.style.display = 'flex';
-      return;
-    }
-    grid.style.display = 'grid';
-    empty.style.display = 'none';
-
-    items.forEach(function (it, i) {
-      var card = document.createElement('div');
-      card.className = 'card' + (i === 0 ? ' focused' : '');
-      card.setAttribute('data-i', i);
-
-      var thumb = document.createElement('div');
-      thumb.className = 'thumb';
-      if (it.url) {
-        var img = document.createElement('img');
-        img.src = it.url;
-        img.onerror = function () {
-          thumb.innerHTML = '<div class="ph">作业照片</div>';
-        };
-        thumb.appendChild(img);
-      } else {
-        thumb.innerHTML = '<div class="ph">作业照片</div>';
-      }
-
-      var label = document.createElement('div');
-      label.className = 'label';
-      label.textContent = subjectOf(it, i);
-
-      var sub = document.createElement('div');
-      sub.className = 'sub';
-      sub.textContent = it.ocr || '（暂无文字识别，请看图片）';
-
-      card.appendChild(thumb);
-      card.appendChild(label);
-      card.appendChild(sub);
-      card.addEventListener('click', function () { focusCard(i); openViewer(); });
-      grid.appendChild(card);
+        }
+        reject(err);
+      });
     });
   }
 
-  function subjectOf(it, i) {
-    var t = it.ocr || '';
-    if (t.indexOf('语文') >= 0) return '语文';
-    if (t.indexOf('数学') >= 0) return '数学';
-    if (t.indexOf('英语') >= 0) return '英语';
-    return '作业 ' + (i + 1);
+  function enableMock() {
+    if (S.mock) return;
+    S.mock = true;
+    S.mockAuto = true;
+    demoBadge.classList.add('on');
   }
 
-  /* ---------------- 卡片焦点 ---------------- */
-  function focusCard(i) {
-    var cards = grid.querySelectorAll('.card');
-    if (!cards.length) return;
-    i = Math.max(0, Math.min(cards.length - 1, i));
-    state.idx = i;
-    for (var k = 0; k < cards.length; k++) {
-      cards[k].classList.toggle('focused', k === i);
+  function setLoading(on) {
+    tv.classList.toggle('loading', !!on);
+  }
+
+  /* 主数据：某天作业。date 为空 = 服务端今天 */
+  function loadDay(date, silent) {
+    var q = date ? ('?date=' + encodeURIComponent(date)) : '';
+    if (!silent) setLoading(true);
+    return getJSON('/api/day' + q).then(function (d) {
+      if (!d || !d.date) throw new Error('bad response');
+      var same = S.day && S.day.date === d.date;
+      S.day = d;
+      S.offline = false;
+      S.noData = false;
+      S.stamp = new Date();
+      if (d.is_today) S.today = d.date;
+      if (!S.today) S.today = d.date;
+      S.sel = d.date;
+      S.weekStart = mondayOf(d.date);
+      if (!same) { S.subjIdx = 0; S.imgIdx = 0; S.imgTouched = false; }
+      clampIdx();
+      writeCache('day:' + d.date, d);
+      setLoading(false);
+      render();
+      return d;
+    }).catch(function () {
+      // 失败：有缓存就显示缓存 + 「上次更新」
+      var cached = readCache('day:' + (date || S.sel || S.today));
+      if (cached && cached.data) {
+        S.day = cached.data;
+        S.offline = true;
+        S.noData = false;
+        S.stamp = new Date(cached.ts);
+        S.sel = cached.data.date;
+        S.weekStart = mondayOf(cached.data.date);
+        clampIdx();
+        setLoading(false);
+        render();
+      } else {
+        S.offline = true;
+        S.noData = true;
+        S.day = null;
+        setLoading(false);
+        render();
+      }
+      return null;
+    });
+  }
+
+  function loadWeek() {
+    var from = S.weekStart || mondayOf(S.sel || todayYmd());
+    var to = addDays(from, 6);
+    var key = 'days:' + from;
+    function apply(days) {
+      S.days = days || [];
+      writeCache(key, S.days);
+      renderWeek();
     }
-    cards[i].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (S.mock) { apply(mockDays(from, to)); return; }
+    getJSON('/api/days?from=' + from + '&to=' + to).then(function (d) {
+      apply((d && d.days) || []);
+    }).catch(function () {
+      var cached = readCache(key);
+      apply(cached ? cached.data : []);
+    });
   }
 
-  function cols() {
-    var cards = grid.querySelectorAll('.card');
-    if (!cards.length) return 1;
-    var top = cards[0].offsetTop;
-    var n = 0;
-    for (var i = 0; i < cards.length; i++) {
-      if (cards[i].offsetTop === top) n++;
-    }
-    return Math.max(1, n);
+  function clampIdx() {
+    var d = S.day;
+    if (!d) return;
+    var n = (d.subjects || []).length;
+    if (n) S.subjIdx = Math.max(0, Math.min(n - 1, S.subjIdx)); else S.subjIdx = 0;
+    var m = (d.images || []).length;
+    if (m) S.imgIdx = Math.max(0, Math.min(m - 1, S.imgIdx)); else S.imgIdx = 0;
   }
 
-  /* ---------------- 大图 ---------------- */
-  function openViewer() {
-    var it = state.items[state.idx];
-    if (!it) return;
-    state.open = true;
-    state.zoom = 1; state.tx = 0; state.ty = 0;
-    viewer.classList.add('on');
-    vimg.removeAttribute('src');
+  /* ================= 渲染 ================= */
+  function render() {
+    if (!S.day) { renderNoData(); return; }
+    var d = S.day;
+    var ago = (typeof d.days_ago === 'number') ? d.days_ago : diffDays(S.today || d.date, d.date);
 
-    if (it.url) {
-      vimg.onerror = function () {
-        vimg.onerror = null;
-        vimg.style.width = '1px';
-        vpos.textContent = '图片加载失败';
-      };
-      vimg.onload = function () {
-        fitViewer();
-        document.getElementById('hint').textContent = '方向键移动 · OK 放大 · 返回关闭';
-      };
-      vimg.src = it.url;
+    titleEl.textContent = (d.is_today || ago === 0)
+      ? '今天的作业'
+      : (ago === 1 ? '昨天的作业' : shortDate(d.date) + '的作业');
+    subDateEl.textContent = fullDate(d.date);
+
+    if (ago > 1) {
+      relChip.textContent = ago + ' 天前';
+      relChip.style.display = '';
+    } else if (ago < 0) {
+      relChip.textContent = Math.abs(ago) + ' 天后';
+      relChip.style.display = '';
     } else {
-      vimg.style.width = '1px';
-      vpos.textContent = '示例卡片 · 还没有真实图片';
+      relChip.style.display = 'none';
     }
+
+    syncChip.className = 'chip' + (S.offline ? ' stale' : '');
+    syncChip.textContent = S.stamp
+      ? (S.offline ? '上次更新 ' + hm(S.stamp) : '已同步 ' + hm(S.stamp))
+      : '还没同步';
+
+    tv.classList.remove('is-empty');
+    tv.classList.remove('loading');
+
+    if (d.state === 'empty') {
+      emptyBig.textContent = d.is_today ? '今天还没有作业' : '这天还没有作业';
+      emptySmall.textContent = '老师发出来之后，这里会自己出现';
+      tv.classList.add('is-empty');
+      setUd('换科目');
+      renderWeek();
+      return;
+    }
+
+    if (d.state === 'pending' || !(d.subjects || []).length) {
+      renderPending(d);
+      renderWeek();
+      return;
+    }
+
+    renderReady(d);
+    renderWeek();
+  }
+
+  function renderNoData() {
+    titleEl.textContent = '今天的作业';
+    subDateEl.textContent = '';
+    relChip.style.display = 'none';
+    syncChip.className = 'chip stale';
+    syncChip.textContent = '连不上 NAS';
+    emptyBig.textContent = '连不上 NAS';
+    emptySmall.textContent = '检查一下电视和 NAS 是不是在同一个 Wi-Fi';
+    var d = S.sel || S.today;
+    emptyBig.textContent = '暂时看不到作业';
+    emptySmall.textContent = '连不上 NAS，检查一下电视的 Wi-Fi';
+    tv.classList.add('is-empty');
+    renderWeek();
+    void d;
+  }
+
+  function renderReady(d) {
+    var subjects = d.subjects || [];
+    var s = subjects[S.subjIdx];
+    if (!s) { renderPending(d); return; }
+    var items = s.items || [];
+    var imgUrl = s.image_url || pickImage(d, S.subjIdx);
+
+    figureEl.textContent = '';
+    var photo = document.createElement('div');
+    photo.className = 'photo';
+
+    if (imgUrl) {
+      var img = document.createElement('img');
+      img.alt = s.subject + ' 作业原图';
+      img.onerror = function () {
+        photo.textContent = '';
+        photo.appendChild(placeholder('原图打不开', '文字还在，先照着写'));
+      };
+      img.src = resolveImg(imgUrl);
+      photo.appendChild(img);
+    } else {
+      photo.appendChild(placeholder('还没有原图', ''));
+    }
+
+    var tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.textContent = s.subject + ' ' + (S.subjIdx + 1) + ' / ' + subjects.length;
+    photo.appendChild(tag);
+    figureEl.appendChild(photo);
+
+    textEl.textContent = '';
+    var head = document.createElement('div');
+    head.className = 'subject';
+    var name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = s.subject || '作业';
+    var idx = document.createElement('div');
+    idx.className = 'idx';
+    idx.textContent = '第 ' + (S.subjIdx + 1) + ' 项 / 共 ' + subjects.length + ' 项';
+    head.appendChild(name); head.appendChild(idx);
+
+    var rule = document.createElement('div');
+    rule.className = 'rule';
+
+    var lines = document.createElement('div');
+    lines.className = 'lines';
+    if (!items.length) {
+      var p0 = document.createElement('p');
+      p0.className = 'muted';
+      p0.textContent = '这一科没有拆出具体条目，直接看图就好。';
+      lines.appendChild(p0);
+    } else {
+      items.forEach(function (it, i) {
+        var p = document.createElement('p');
+        var n = document.createElement('span');
+        n.className = 'num';
+        n.textContent = i + 1;
+        p.appendChild(n);
+        p.appendChild(document.createTextNode(it.content || ''));
+        lines.appendChild(p);
+      });
+    }
+
+    var cap = document.createElement('div');
+    cap.className = 'caption';
+    cap.innerHTML = '识别结果，仅供参考 · <em>以原图为准</em>';
+
+    textEl.appendChild(head);
+    textEl.appendChild(rule);
+    textEl.appendChild(lines);
+    textEl.appendChild(cap);
+    setUd('换科目');
+  }
+
+  function renderPending(d) {
+    var images = d.images || [];
+    figureEl.textContent = '';
+
+    var grid = document.createElement('div');
+    grid.className = 'grid';
+    var cols = Math.min(3, Math.max(1, images.length));
+    grid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+
+    if (!images.length) {
+      grid.style.gridTemplateColumns = '1fr';
+      var none = document.createElement('div');
+      none.className = 'cell';
+      none.appendChild(placeholder('还没有图片', '等老师发出来'));
+      grid.appendChild(none);
+    } else {
+      images.forEach(function (im, i) {
+        var cell = document.createElement('div');
+        cell.className = 'cell' + (S.imgTouched && i === S.imgIdx ? ' cur' : '');
+        var img = document.createElement('img');
+        img.alt = '作业原图 ' + (i + 1);
+        img.onerror = function () {
+          cell.textContent = '';
+          cell.appendChild(placeholder('这张图打不开', ''));
+        };
+        img.src = resolveImg(im.url);
+        cell.appendChild(img);
+        cell.onclick = function () { S.imgIdx = i; S.imgTouched = true; renderPending(S.day); };
+        grid.appendChild(cell);
+      });
+    }
+    figureEl.appendChild(grid);
+
+    textEl.textContent = '';
+    var head = document.createElement('div');
+    head.className = 'subject';
+    var name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = '正在识别';
+    var idx = document.createElement('div');
+    idx.className = 'idx';
+    idx.textContent = images.length ? ('第 ' + (S.imgIdx + 1) + ' 张 / 共 ' + images.length + ' 张') : '';
+    head.appendChild(name); head.appendChild(idx);
+
+    var rule = document.createElement('div');
+    rule.className = 'rule';
+
+    var lines = document.createElement('div');
+    lines.className = 'lines';
+    var p1 = document.createElement('p');
+    p1.textContent = '正在识别，先看图 · 图是准的';
+    var p2 = document.createElement('p');
+    p2.className = 'muted';
+    p2.textContent = '文字过一会儿自己出来，先照着图片写。';
+    lines.appendChild(p1); lines.appendChild(p2);
+
+    var cap = document.createElement('div');
+    cap.className = 'caption';
+    cap.textContent = '原图已经存好，不会丢';
+
+    textEl.appendChild(head);
+    textEl.appendChild(rule);
+    textEl.appendChild(lines);
+    textEl.appendChild(cap);
+    setUd('换图片');
+  }
+
+  function placeholder(title, sub) {
+    var box = document.createElement('div');
+    box.className = 'ph';
+    var b = document.createElement('div');
+    b.className = 'box';
+    b.textContent = '!';
+    var t = document.createElement('div');
+    t.textContent = title;
+    box.appendChild(b); box.appendChild(t);
+    if (sub) {
+      var s = document.createElement('div');
+      s.className = 't2';
+      s.textContent = sub;
+      box.appendChild(s);
+    }
+    return box;
+  }
+
+  function pickImage(d, i) {
+    var images = d.images || [];
+    if (!images.length) return '';
+    return (images[i] || images[0]).url;
+  }
+
+  function resolveImg(u) {
+    if (!u) return '';
+    if (/^(data:|blob:|https?:)/i.test(u)) return u;
+    return base + u;
+  }
+
+  function setUd(t) { udHint.textContent = t; }
+
+  /* ================= 日期条 ================= */
+  function renderWeek() {
+    daysEl.textContent = '';
+    var start = S.weekStart || mondayOf(S.sel || todayYmd());
+    var map = {};
+    (S.days || []).forEach(function (m) { if (m && m.date) map[m.date] = m; });
+
+    for (var i = 0; i < 7; i++) {
+      var ds = addDays(start, i);
+      var dt = parseYmd(ds);
+      var el = document.createElement('div');
+      el.className = 'day';
+      if (ds === S.today) el.className += ' today';
+      if (ds === S.sel) el.className += ' sel';
+      if (S.today && ds > S.today) el.className += ' future';
+
+      var w = document.createElement('div');
+      w.className = 'w';
+      w.textContent = '周' + '日一二三四五六'[dt.getDay()];
+      var dnum = document.createElement('div');
+      dnum.className = 'd';
+      dnum.textContent = dt.getDate();
+      el.appendChild(w); el.appendChild(dnum);
+
+      var mark = map[ds];
+      if (mark && mark.has) {
+        var dot = document.createElement('div');
+        dot.className = 'dot';
+        el.appendChild(dot);
+      }
+
+      el.setAttribute('data-date', ds);
+      el.onclick = (function (date) {
+        return function () { selectDate(date); };
+      })(ds);
+
+      daysEl.appendChild(el);
+    }
+  }
+
+  /* ================= 导航 ================= */
+  function selectDate(date) {
+    if (!date) return;
+    S.sel = date;
+    var nw = mondayOf(date);
+    var weekChanged = nw !== S.weekStart;
+    S.weekStart = nw;
+    renderWeek();
+    if (weekChanged) loadWeek();
+    loadDay(date);
+  }
+
+  function moveDate(dir) {
+    if (S.viewer) return;
+    selectDate(addDays(S.sel, dir));
+  }
+
+  function moveSubject(dir) {
+    if (S.viewer || !S.day) return;
+    var d = S.day;
+    if (d.state === 'ready' && (d.subjects || []).length) {
+      var n = d.subjects.length;
+      S.subjIdx = Math.max(0, Math.min(n - 1, S.subjIdx + dir));
+      renderReady(d);
+      renderWeek();
+    } else if (d.state === 'pending' && (d.images || []).length) {
+      var m = d.images.length;
+      S.imgTouched = true;
+      S.imgIdx = Math.max(0, Math.min(m - 1, S.imgIdx + dir));
+      renderPending(d);
+      renderWeek();
+    }
+  }
+
+  /* ================= 全屏看图 ================= */
+  function currentImage() {
+    var d = S.day;
+    if (!d) return '';
+    if (d.state === 'ready') {
+      var s = (d.subjects || [])[S.subjIdx];
+      return s ? (s.image_url || pickImage(d, S.subjIdx)) : '';
+    }
+    return pickImage(d, S.imgIdx);
+  }
+
+  function openViewer(u) {
+    if (!u) return;
+    S.viewer = true;
+    S.vy = 0;
+    viewer.classList.add('on');
+    vimg.style.display = 'block';
+    vph.style.display = 'none';
+    vimg.style.transform = 'translate(-50%,0)';
+    vimg.style.top = '0px';
+    vimg.onerror = function () {
+      vimg.style.display = 'none';
+      vph.style.display = 'flex';
+    };
+    vimg.onload = function () {
+      vimg.style.display = 'block';
+      vph.style.display = 'none';
+      fitViewer();
+    };
+    vimg.src = resolveImg(u);
+    if (vimg.complete && vimg.naturalWidth) fitViewer();
   }
 
   function fitViewer() {
-    var vw = window.innerWidth, vh = window.innerHeight - 90;
-    var r = vw / vimg.naturalWidth;
-    var r2 = vh / vimg.naturalHeight;
-    var s = Math.min(r, r2);
-    vimg.style.width = (vimg.naturalWidth * s) + 'px';
-    vimg.style.marginLeft = (-vimg.naturalWidth * s / 2) + 'px';
-    vimg.style.marginTop  = (-vimg.naturalHeight * s / 2) + 'px';
-    applyTransform();
+    if (!vimg.naturalWidth) return;
+    var ih = vimg.offsetHeight;
+    var vh = 1080 - 88;
+    vimg.style.top = (ih < vh ? Math.round((vh - ih) / 2) : 0) + 'px';
+    vimg.style.transform = 'translate(-50%,0)';
+    S.vy = 0;
   }
 
-  function applyTransform() {
-    vimg.style.transform =
-      'translate(' + state.tx + 'px,' + state.ty + 'px) scale(' + state.zoom + ')';
+  function scrollViewer(delta) {
+    var ih = vimg.offsetHeight;
+    var vh = 1080 - 88;
+    var max = Math.max(0, ih - vh);
+    S.vy = Math.max(-max, Math.min(0, S.vy + delta));
+    vimg.style.transform = 'translate(-50%,' + S.vy + 'px)';
   }
 
   function closeViewer() {
-    state.open = false;
+    S.viewer = false;
     viewer.classList.remove('on');
-    document.getElementById('hint').textContent = '方向键选择 · OK 看大图';
+    vimg.removeAttribute('src');
   }
 
-  /* ---------------- 键位 ---------------- */
+  /* ================= 键位 ================= */
   document.addEventListener('keydown', function (e) {
     var k = e.key;
-    var BACK = (k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack');
 
-    if (state.open) {
-      if (BACK) { closeViewer(); }
-      else if (k === 'Enter' || k === ' ') {
-        state.zoom = state.zoom > 1 ? 1 : 2;
-        if (state.zoom === 1) { state.tx = 0; state.ty = 0; }
-        applyTransform();
+    if (S.viewer) {
+      if (k === 'Escape' || k === 'Backspace' || k === 'BrowserBack' || k === 'GoBack') {
+        closeViewer();
+      } else if (k === 'ArrowUp') {
+        scrollViewer(180);
+      } else if (k === 'ArrowDown') {
+        scrollViewer(-180);
+      } else {
+        return;
       }
-      else if (k === 'ArrowLeft')  { state.tx += 160; applyTransform(); }
-      else if (k === 'ArrowRight') { state.tx -= 160; applyTransform(); }
-      else if (k === 'ArrowUp')    { state.ty += 160; applyTransform(); }
-      else if (k === 'ArrowDown')  { state.ty -= 160; applyTransform(); }
-      else return;
       e.preventDefault();
       return;
     }
 
-    var n = state.items.length;
-    if (!n) return;
-
-    if (k === 'ArrowRight')      { focusCard(state.idx + 1); }
-    else if (k === 'ArrowLeft')  { focusCard(state.idx - 1); }
-    else if (k === 'ArrowDown')  { focusCard(state.idx + cols()); }
-    else if (k === 'ArrowUp')    { focusCard(state.idx - cols()); }
-    else if (k === 'Enter' || k === ' ') { openViewer(); }
+    if (k === 'ArrowLeft') { moveDate(-1); }
+    else if (k === 'ArrowRight') { moveDate(1); }
+    else if (k === 'ArrowUp') { moveSubject(-1); }
+    else if (k === 'ArrowDown') { moveSubject(1); }
+    else if (k === 'Enter' || k === ' ') { openViewer(currentImage()); }
     else return;
     e.preventDefault();
   });
 
-  load();
-  window.addEventListener('resize', function () { if (state.open && vimg.naturalWidth) fitViewer(); });
-  setInterval(load, 5 * 60 * 1000); // 五分钟自己刷一次，孩子不用退出重进
+  document.getElementById('prevWeek').onclick = function () { moveDate(-7); };
+  document.getElementById('nextWeek').onclick = function () { moveDate(7); };
+
+  /* ================= 缩放 ================= */
+  function fit() {
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    document.getElementById('stage').style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+
+  /* ================= Mock ================= */
+  var IMG_CACHE = null;
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function board(title, lines) {
+    var w = 900, h = 1200;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
+      '<rect width="100%" height="100%" fill="#203A2C"/>' +
+      '<rect x="36" y="36" width="' + (w - 72) + '" height="' + (h - 72) + '" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/>' +
+      '<text x="70" y="150" fill="#EAF2E6" font-size="46" font-weight="700" font-family="Noto Sans CJK SC,Noto Serif CJK SC,sans-serif">' + esc(title) + '</text>' +
+      '<line x1="70" y1="190" x2="' + (w - 70) + '" y2="190" stroke="rgba(255,255,255,.18)" stroke-width="2"/>';
+    lines.forEach(function (l, i) {
+      svg += '<text x="70" y="' + (280 + i * 108) + '" fill="#DFEADD" font-size="36" font-family="Noto Sans CJK SC,Noto Serif CJK SC,sans-serif">' + esc(l) + '</text>';
+    });
+    svg += '<text x="70" y="' + (h - 70) + '" fill="#9DB3A5" opacity=".55" font-size="26" font-family="Noto Sans CJK SC,Noto Serif CJK SC,sans-serif">演示图片 · 不是真实作业</text>';
+    svg += '</svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  function mockImages() {
+    if (IMG_CACHE) return IMG_CACHE;
+    IMG_CACHE = [
+      { id: 1, url: board('语文 · 第 32 页', ['1. 朗读课文三遍', '2. 抄写生字「秋 风 叶」', '3. 背诵第一自然段']), width: 900, height: 1200 },
+      { id: 2, url: board('数学 · 练习册 P18', ['1. 第 1—6 题', '2. 口算本一页，计时 5 分钟', '3. 家长签字']), width: 900, height: 1200 },
+      { id: 3, url: board('英语 · Unit 4', ['1. 跟读音频三遍', '2. 抄写 each / both / never', '3. 背会三个单词']), width: 900, height: 1200 }
+    ];
+    return IMG_CACHE;
+  }
+
+  function item(id, content) { return { id: id, content: content, done: false }; }
+
+  function mockDay(date) {
+    var today = todayYmd();
+    var ago = diffDays(today, date);
+    var imgs = mockImages();
+    if (ago === 0) {
+      return {
+        date: date, is_today: true, days_ago: 0, state: 'ready', note: '今天作业在黑板上了',
+        images: imgs.slice(),
+        subjects: [
+          { subject: '语文', image_url: imgs[0].url, items: [item(1, '朗读第 32 页课文三遍'), item(2, '抄写生字「秋、风、叶」各两遍'), item(3, '背诵第一自然段')] },
+          { subject: '数学', image_url: imgs[1].url, items: [item(4, '练习册 P18，第 1—6 题'), item(5, '口算本一页，计时 5 分钟'), item(6, '错的题在下面重写一遍'), item(7, '家长签字')] },
+          { subject: '英语', image_url: imgs[2].url, items: [item(8, '跟读 Unit 4 音频三遍'), item(9, '抄写单词 each、both、never 各三遍')] }
+        ],
+        batch_ids: [318]
+      };
+    }
+    if (ago === 1) {
+      return {
+        date: date, is_today: false, days_ago: 1, state: 'pending', note: null,
+        images: imgs.slice(0, 2), subjects: [], batch_ids: [317]
+      };
+    }
+    if (ago === 3) {
+      return {
+        date: date, is_today: false, days_ago: 3, state: 'ready', note: null,
+        images: [imgs[0]],
+        subjects: [
+          { subject: '语文', image_url: imgs[0].url, items: [item(11, '默写《秋天》第一段'), item(12, '读课外书 20 分钟')] }
+        ],
+        batch_ids: [316]
+      };
+    }
+    return { date: date, is_today: ago === 0, days_ago: ago, state: 'empty', images: [], subjects: [], batch_ids: [] };
+  }
+
+  function mockDays(from, to) {
+    var out = [];
+    var n = diffDays(to, from);
+    for (var i = 0; i <= n; i++) {
+      var ds = addDays(from, i);
+      var ago = diffDays(todayYmd(), ds);
+      var has = (ago === 0 || ago === 1 || ago === 3);
+      out.push({ date: ds, has: has, item_count: has ? (ago === 0 ? 9 : 0) : 0 });
+    }
+    return out;
+  }
+
+  function parseQuery(path) {
+    var q = {};
+    var i = path.indexOf('?');
+    if (i < 0) return q;
+    path.slice(i + 1).split('&').forEach(function (kv) {
+      if (!kv) return;
+      var p = kv.split('=');
+      q[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+    });
+    return q;
+  }
+
+  function mockGet(path) {
+    var p = path.split('?')[0];
+    var q = parseQuery(path);
+    if (p === '/api/day') return mockDay(q.date || todayYmd());
+    if (p === '/api/days') {
+      var from = q.from || mondayOf(S.sel || todayYmd());
+      var to = q.to || addDays(from, 6);
+      return { days: mockDays(from, to) };
+    }
+    if (p === '/api/health') return { ok: true, version: 'mock', time: new Date().toISOString(), db: 'ok', ocr: 'ok' };
+    return {};
+  }
+
+  /* ================= 启动 ================= */
+  if (S.mock) demoBadge.classList.add('on');
+
+  (function boot() {
+    fit();
+    var local = todayYmd();
+    S.today = local;
+    S.sel = local;
+    S.weekStart = mondayOf(local);
+    renderWeek();
+
+    // 调试用：?date=YYYY-MM-DD 直接看某天
+    var qDate = parseQuery(location.search).date || '';
+    if (qDate && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) S.sel = qDate;
+
+    loadDay(qDate || null).then(function () {
+      renderWeek();
+      loadWeek();
+    });
+
+    // 电视一直开着：20 秒静默刷新一次，识别完的文字会自己出现
+    setInterval(function () {
+      if (S.viewer || document.hidden) return;
+      if (!S.day) return;
+      loadDay(S.sel, true).then(function () {});
+    }, 20000);
+  })();
 })();
 </script>
 </body>
