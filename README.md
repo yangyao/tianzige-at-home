@@ -10,7 +10,8 @@
   <a href="#开始使用">开始使用</a> ·
   <a href="deploy/README.md">NAS 部署</a> ·
   <a href="docs/06-构建环境.md">构建与测试</a> ·
-  <a href="https://github.com/yangyao/tianzige-at-home/issues">反馈问题</a>
+  <a href="https://github.com/yangyao/tianzige-at-home/issues">反馈问题</a> ·
+  <a href="README.en.md">English</a>
 </p>
 
 老师把黑板上的作业拍照发到群里，家长用手机、Mac 或浏览器上传，孩子在客厅电视上就能看到原图和整理后的作业，不用再借大人的手机翻群消息。
