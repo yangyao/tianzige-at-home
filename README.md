@@ -9,6 +9,7 @@
 <p align="center">
   <a href="#开始使用">开始使用</a> ·
   <a href="deploy/README.md">NAS 部署</a> ·
+  <a href="docs/13-QQ机器人上传.md">QQ 机器人上传</a> ·
   <a href="docs/06-构建环境.md">构建与测试</a> ·
   <a href="https://github.com/yangyao/tianzige-at-home/issues">反馈问题</a> ·
   <a href="README.en.md">English</a>
@@ -89,7 +90,7 @@ make -C services/homework-server test bundle
 
 目前已完成 Android TV 模拟器验收、iOS / macOS 编译与界面检查、实际 arm64 NAS 的上传和 AI 识别，以及 Web 在 320–1280px 宽度下的排版检查。电视单元测试与 lint、Go race 测试均通过。iPhone IPA 已传入 LiveContainer，安装版本修正后用户确认可用；完整真机流程仍需持续验证。
 
-NAS 当前为用户级常驻服务，尚未注册重启自动启动；自动从群聊采集图片也尚未实现。[验收记录 →](docs/08-验收记录.md)
+NAS 当前为用户级常驻服务，尚未注册重启自动启动。QQ 机器人转发上传已可用（见 [QQ 机器人上传](docs/13-QQ机器人上传.md)），群聊自动采集尚未实现。[验收记录 →](docs/08-验收记录.md)
 
 ## 项目结构
 
