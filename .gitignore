@@ -59,6 +59,7 @@ apps/upload-ios/*.xcodeproj/
 !design/icons/*.png
 !apps/upload-ios/Tianzige/Assets.xcassets/**/*.png
 !apps/upload-mac/Assets.xcassets/**/*.png
+!apps/tv-mac/Assets.xcassets/**/*.png
 !apps/upload-web/assets/*.png
 
 # Curated screenshots for the public README.
