@@ -1,5 +1,8 @@
 package com.tianzige.tv.domain
 
+/** 设置屏第 5 行的三个动作。显示文案在 UI 层查 R.string。 */
+enum class PadAction { SAVE, TEST, CLEAR }
+
 /**
  * 设置屏的「IP 数字键盘」。遥控器没有键盘，只能一排排按键选。
  * 前 4 行是输入键，第 5 行是动作键 —— 正好构成 5×3 的网格，方向键逻辑极简。
@@ -15,17 +18,17 @@ object SettingsPad {
         listOf(".", "0", BACKSPACE),
     )
 
-    val actions: List<String> = listOf("保存", "测试连接", "清除")
+    val actions: List<PadAction> = listOf(PadAction.SAVE, PadAction.TEST, PadAction.CLEAR)
 
     const val ACTION_ROW = 4
     const val ROW_COUNT = 5
     const val COL_COUNT = 3
     const val MAX_LENGTH = 48
 
-    fun label(row: Int, col: Int): String = when {
-        row < ACTION_ROW -> keyRows[row][col]
-        else -> actions[col]
-    }
+    /** 只对输入行有效：取 0-9 / . / ⌫ 的按键字符。 */
+    fun keyLabel(row: Int, col: Int): String = keyRows[row][col]
+
+    fun actionAt(col: Int): PadAction = actions[col]
 
     fun isInputRow(row: Int): Boolean = row in keyRows.indices
 

@@ -1,8 +1,8 @@
 package com.tianzige.tv.domain
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 class SettingsPadTest {
 
@@ -12,10 +12,11 @@ class SettingsPadTest {
         assertEquals(3, SettingsPad.COL_COUNT)
         assertEquals(4, SettingsPad.keyRows.size)
         assertEquals(3, SettingsPad.actions.size)
-        assertEquals("1", SettingsPad.label(0, 0))
-        assertEquals("0", SettingsPad.label(3, 1))
-        assertEquals(SettingsPad.BACKSPACE, SettingsPad.label(3, 2))
-        assertEquals("保存", SettingsPad.label(SettingsPad.ACTION_ROW, 0))
+        assertEquals("1", SettingsPad.keyLabel(0, 0))
+        assertEquals("0", SettingsPad.keyLabel(3, 1))
+        assertEquals(SettingsPad.BACKSPACE, SettingsPad.keyLabel(3, 2))
+        assertEquals(PadAction.SAVE, SettingsPad.actionAt(0))
+        assertEquals(PadAction.CLEAR, SettingsPad.actionAt(2))
     }
 
     @Test
@@ -36,6 +37,6 @@ class SettingsPadTest {
     fun `长度上限保护`() {
         val long = "1".repeat(SettingsPad.MAX_LENGTH)
         assertEquals(long, SettingsPad.append(long, "2"))
-        assertTrue(SettingsPad.append(long, "2").length == SettingsPad.MAX_LENGTH)
+        assertEquals(SettingsPad.MAX_LENGTH, SettingsPad.append(long, "2").length)
     }
 }

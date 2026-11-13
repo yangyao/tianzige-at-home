@@ -11,7 +11,9 @@ import com.tianzige.tv.data.TvApi
 import com.tianzige.tv.domain.DEFAULT_SERVER_URL
 import com.tianzige.tv.domain.DayLogic
 import com.tianzige.tv.domain.DayState
+import com.tianzige.tv.domain.ErrorKind
 import com.tianzige.tv.domain.ErrorText
+import com.tianzige.tv.domain.SettingsNotice
 import com.tianzige.tv.domain.SettingsPad
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -35,16 +37,14 @@ data class HomeUiState(
     /** true = 当前画面来自缓存（网络没通） */
     val stale: Boolean = false,
     /** 完全没有缓存又连不上时才有值 */
-    val fatalError: String? = null,
+    val fatalError: ErrorKind? = null,
     val subjectIndex: Int = 0,
     val imageIndex: Int = 0,
     val fullscreen: Boolean = false,
     val fullscreenUrl: String? = null,
     val showSettings: Boolean = false,
     val settingsDraft: String = "",
-    val settingsMessage: String? = null,
-    val settingsNoticeOk: Boolean = false,
-    val settingsTesting: Boolean = false,
+    val settingsNotice: SettingsNotice? = null,
     val settingsRow: Int = 0,
     val settingsCol: Int = 0,
     val exitConfirm: Boolean = false,
@@ -170,11 +170,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         _state.update {
-            it.copy(day = null, dayLoading = false, stale = false, fatalError = ErrorText.describe(error))
+            it.copy(day = null, dayLoading = false, stale = false, fatalError = ErrorText.kindOf(error))
         }
         if (!hasEverLoaded && !autoSettingsShown) {
             autoSettingsShown = true
-            openSettings(message = "连不上服务端，检查一下地址")
+            openSettings(notice = SettingsNotice.Unreachable)
         }
     }
 
@@ -295,14 +295,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------------------------------------------------------- 设置屏
 
-    fun openSettings(message: String? = null) {
+    fun openSettings(notice: SettingsNotice? = null) {
         _state.update {
             it.copy(
                 showSettings = true,
                 settingsDraft = it.serverUrl,
-                settingsMessage = message,
-                settingsNoticeOk = false,
-                settingsTesting = false,
+                settingsNotice = notice,
                 settingsRow = 0,
                 settingsCol = 0,
             )
@@ -310,7 +308,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeSettings() {
-        _state.update { it.copy(showSettings = false, settingsMessage = null, settingsTesting = false) }
+        _state.update { it.copy(showSettings = false, settingsNotice = null) }
     }
 
     fun settingsMove(dRow: Int, dCol: Int) {
@@ -323,12 +321,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     fun settingsActivate() {
         val now = _state.value
         if (SettingsPad.isInputRow(now.settingsRow)) {
-            val key = SettingsPad.label(now.settingsRow, now.settingsCol)
+            val key = SettingsPad.keyLabel(now.settingsRow, now.settingsCol)
             _state.update {
                 it.copy(
                     settingsDraft = SettingsPad.append(it.settingsDraft, key),
-                    settingsMessage = null,
-                    settingsNoticeOk = false,
+                    settingsNotice = null,
                 )
             }
             return
@@ -337,7 +334,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             0 -> saveSettings()
             1 -> testConnection()
             2 -> _state.update {
-                it.copy(settingsDraft = "", settingsMessage = null, settingsNoticeOk = false)
+                it.copy(settingsDraft = "", settingsNotice = null)
             }
         }
     }
@@ -346,7 +343,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         val raw = _state.value.settingsDraft
         if (!DayLogic.isPlausibleServerUrl(raw)) {
             _state.update {
-                it.copy(settingsMessage = "地址看起来不对，比如 192.168.1.8:8080", settingsNoticeOk = false)
+                it.copy(settingsNotice = SettingsNotice.BadAddress)
             }
             return
         }
@@ -363,9 +360,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 serverUrl = url,
                 marks = emptyMap(),
                 showSettings = false,
-                settingsMessage = null,
-                settingsNoticeOk = false,
-                settingsTesting = false,
+                settingsNotice = null,
                 day = null,
                 dayLoading = true,
                 stale = false,
@@ -386,30 +381,24 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         val raw = _state.value.settingsDraft
         if (!DayLogic.isPlausibleServerUrl(raw)) {
             _state.update {
-                it.copy(settingsMessage = "地址看起来不对，比如 192.168.1.8:8080", settingsNoticeOk = false)
+                it.copy(settingsNotice = SettingsNotice.BadAddress)
             }
             return
         }
         val url = DayLogic.normalizeServerUrl(raw)
         _state.update {
-            it.copy(settingsTesting = true, settingsMessage = "正在连接…", settingsNoticeOk = false)
+            it.copy(settingsNotice = SettingsNotice.Testing)
         }
         viewModelScope.launch {
-            val message = try {
+            val notice = try {
                 val health = api.health(url)
-                "连上了 · 服务版本 ${health.version ?: "未知"}"
+                SettingsNotice.Connected(health.version)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                "连不上：${ErrorText.describe(e)}"
+                SettingsNotice.Failed(ErrorText.kindOf(e))
             }
-            _state.update {
-                it.copy(
-                    settingsTesting = false,
-                    settingsMessage = message,
-                    settingsNoticeOk = message.startsWith("连上了"),
-                )
-            }
+            _state.update { it.copy(settingsNotice = notice) }
         }
     }
 

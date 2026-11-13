@@ -10,6 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.util.Locale
 
 /**
  * 状态机映射、日期计算这类「算出来的东西」全部是纯函数，这里逐个钉死。
@@ -64,32 +65,52 @@ class DayLogicTest {
 
     @Test
     fun `顶栏副标题带年月日和星期`() {
-        assertEquals("2026年11月12日 星期四", DayLogic.headerLine(today))
-        assertEquals("周四", DayLogic.weekdayShort(today))
+        assertEquals(DayHeader("2026年11月12日", "星期四"), DayLogic.header(today, Locale.CHINA))
+        assertEquals("周四", DayLogic.weekdayShort(today, Locale.CHINA))
+        assertEquals("星期四", DayLogic.weekdayLong(today, Locale.CHINA))
+    }
+
+    @Test
+    fun `英文环境顶栏用英文日期和星期缩写`() {
+        assertEquals(DayHeader("Nov 12, 2026", "Thu"), DayLogic.header(today, Locale.ENGLISH))
+        assertEquals("Thu", DayLogic.weekdayShort(today, Locale.ENGLISH))
     }
 
     // ---------------------------------------------------------------- 标题
 
     @Test
     fun `今天的标题`() {
-        assertEquals("今天的作业", DayLogic.titleFor(today, isToday = true, daysAgo = 0))
+        assertEquals(DayTitle.Today, DayLogic.titleFor(today, isToday = true, daysAgo = 0, Locale.ENGLISH))
     }
 
     @Test
     fun `昨天的标题`() {
-        assertEquals("昨天的作业", DayLogic.titleFor(today.minusDays(1), isToday = false, daysAgo = 1))
+        assertEquals(
+            DayTitle.Yesterday,
+            DayLogic.titleFor(today.minusDays(1), isToday = false, daysAgo = 1, Locale.CHINA),
+        )
     }
 
     @Test
     fun `更早的日期用几月几日`() {
-        assertEquals("11月9日的作业", DayLogic.titleFor(LocalDate.of(2026, 11, 9), isToday = false, daysAgo = 3))
+        assertEquals(
+            DayTitle.Other("11月", 9),
+            DayLogic.titleFor(LocalDate.of(2026, 11, 9), isToday = false, daysAgo = 3, locale = Locale.CHINA),
+        )
+        assertEquals(
+            DayTitle.Other("Nov", 9),
+            DayLogic.titleFor(LocalDate.of(2026, 11, 9), isToday = false, daysAgo = 3, locale = Locale.ENGLISH),
+        )
     }
 
     @Test
     fun `未来日期也能显示`() {
-        assertEquals("11月18日的作业", DayLogic.titleFor(LocalDate.of(2026, 11, 18), isToday = false, daysAgo = -6))
-        assertEquals("明天", DayLogic.relativeChip(-1))
-        assertEquals("6 天后", DayLogic.relativeChip(-6))
+        assertEquals(
+            DayTitle.Other("11月", 18),
+            DayLogic.titleFor(LocalDate.of(2026, 11, 18), isToday = false, daysAgo = -6, locale = Locale.CHINA),
+        )
+        assertEquals(RelativeLabel.Tomorrow, DayLogic.relativeChip(-1))
+        assertEquals(RelativeLabel.InDays(6), DayLogic.relativeChip(-6))
     }
 
     @Test
@@ -97,14 +118,8 @@ class DayLogicTest {
         assertNull(DayLogic.relativeChip(null))
         assertNull(DayLogic.relativeChip(0))
         assertNull(DayLogic.relativeChip(1))
-        assertEquals("2 天前", DayLogic.relativeChip(2))
-        assertEquals("31 天前", DayLogic.relativeChip(31))
-    }
-
-    @Test
-    fun `空状态文案今天和历史日不同`() {
-        assertEquals("今天还没有作业", DayLogic.emptyTitle(true))
-        assertEquals("这天还没有作业", DayLogic.emptyTitle(false))
+        assertEquals(RelativeLabel.DaysAgo(2), DayLogic.relativeChip(2))
+        assertEquals(RelativeLabel.DaysAgo(31), DayLogic.relativeChip(31))
     }
 
     // ---------------------------------------------------------------- 三态

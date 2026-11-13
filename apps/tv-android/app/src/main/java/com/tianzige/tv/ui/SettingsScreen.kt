@@ -19,7 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Text
+import com.tianzige.tv.R
+import com.tianzige.tv.domain.PadAction
+import com.tianzige.tv.domain.SettingsNotice
 import com.tianzige.tv.domain.SettingsPad
 import com.tianzige.tv.ui.components.TvFocusable
 import com.tianzige.tv.ui.theme.BgBase
@@ -51,10 +55,10 @@ fun SettingsScreen(state: HomeUiState) {
             .background(BgBase)
             .padding(horizontal = dims.dp(120f), vertical = dims.dp(56f)),
     ) {
-        Text("服务端地址", style = tz.type.h1, color = TextPrimary)
+        Text(stringResource(R.string.server_address), style = tz.type.h1, color = TextPrimary)
         Spacer(Modifier.height(dims.dp(10f)))
         Text(
-            text = "电视和 NAS 要连同一个 WiFi。默认 http://nas.local:8080，也可以直接输 NAS 的 IP 和端口。",
+            text = stringResource(R.string.server_hint),
             style = tz.type.caption,
             color = TextSecondary,
         )
@@ -66,7 +70,7 @@ fun SettingsScreen(state: HomeUiState) {
         Notice(state)
         Spacer(Modifier.weight(1f))
         Text(
-            text = "方向键移动 · OK 输入 · 菜单 返回主屏",
+            text = stringResource(R.string.settings_hint),
             style = tz.type.caption,
             color = TextDim,
         )
@@ -78,6 +82,7 @@ private fun AddressBox(draft: String) {
     val tz = LocalTz.current
     val dims = tz.dimens
     val shape = RoundedCornerShape(dims.dp(12f))
+    val placeholder = stringResource(R.string.server_address_empty)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -89,7 +94,7 @@ private fun AddressBox(draft: String) {
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
-            text = draft.ifBlank { "点下面的数字键输入地址" },
+            text = draft.ifBlank { placeholder },
             style = tz.type.body,
             color = if (draft.isBlank()) TextDim else TextPrimary,
             fontFamily = FontFamily.Monospace,
@@ -131,14 +136,14 @@ private fun PadGrid(state: HomeUiState) {
                 .height(dims.dp(76f)),
             horizontalArrangement = Arrangement.spacedBy(dims.dp(16f)),
         ) {
-            SettingsPad.actions.forEachIndexed { col, label ->
+            SettingsPad.actions.forEachIndexed { col, action ->
                 PadCell(
-                    label = label,
+                    label = padActionText(action),
                     focused = state.settingsRow == SettingsPad.ACTION_ROW && state.settingsCol == col,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight(),
-                    muted = label == "清除",
+                    muted = action == PadAction.CLEAR,
                 )
             }
         }
@@ -175,11 +180,11 @@ private fun PadCell(
 @Composable
 private fun Notice(state: HomeUiState) {
     val tz = LocalTz.current
-    val message = state.settingsMessage ?: return
-    val color = when {
-        state.settingsTesting -> Warn
-        state.settingsNoticeOk -> OkGreen
+    val notice = state.settingsNotice ?: return
+    val color = when (notice) {
+        SettingsNotice.Testing -> Warn
+        is SettingsNotice.Connected -> OkGreen
         else -> ErrorRed
     }
-    Text(text = message, style = tz.type.caption, color = color)
+    Text(text = settingsNoticeText(notice), style = tz.type.caption, color = color)
 }

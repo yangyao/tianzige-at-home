@@ -13,7 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Text
+import com.tianzige.tv.R
 import com.tianzige.tv.ui.components.TvFocusable
 import com.tianzige.tv.ui.theme.BgSurface
 import com.tianzige.tv.ui.theme.LocalTz
@@ -36,14 +38,14 @@ fun ExitConfirmDialog(choice: Int) {
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("要退出吗？", style = tz.type.h1, color = TextPrimary)
+            Text(stringResource(R.string.exit_question), style = tz.type.h1, color = TextPrimary)
             Spacer(Modifier.height(dims.dp(28f)))
             Row(horizontalArrangement = Arrangement.spacedBy(dims.dp(24f))) {
-                ChoicePill(label = "继续看", focused = choice == 0)
-                ChoicePill(label = "退出", focused = choice == 1)
+                ChoicePill(label = stringResource(R.string.keep_watching), focused = choice == 0)
+                ChoicePill(label = stringResource(R.string.exit), focused = choice == 1)
             }
             Spacer(Modifier.height(dims.dp(24f)))
-            Text("← → 选择 · OK 确认 · 返回 继续看", style = tz.type.caption, color = TextDim)
+            Text(stringResource(R.string.exit_hint), style = tz.type.caption, color = TextDim)
         }
     }
 }

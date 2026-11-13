@@ -129,7 +129,7 @@ private fun DayCard(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = DayLogic.weekdayShort(date),
+                text = weekdayShortText(date),
                 style = tz.type.min,
                 color = if (isToday) TextSecondary else TextDim,
                 maxLines = 1,

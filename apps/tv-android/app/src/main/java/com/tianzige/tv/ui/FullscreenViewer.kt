@@ -25,8 +25,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Text
 import coil.compose.AsyncImage
+import com.tianzige.tv.R
 import com.tianzige.tv.ui.theme.LocalTz
 import com.tianzige.tv.ui.theme.TextDim
 import com.tianzige.tv.ui.theme.TextSecondary
@@ -60,7 +62,7 @@ fun FullscreenViewer(url: String?, scroll: ScrollState) {
     ) {
         if (url == null) {
             Text(
-                text = "没有原图",
+                text = stringResource(R.string.no_photo),
                 style = tz.type.body,
                 color = TextDim,
                 modifier = Modifier.align(Alignment.Center),
@@ -73,7 +75,7 @@ fun FullscreenViewer(url: String?, scroll: ScrollState) {
             ) {
                 AsyncImage(
                     model = url,
-                    contentDescription = "作业原图",
+                    contentDescription = stringResource(R.string.cd_homework_photo),
                     modifier = Modifier.fillMaxWidth(),
                     contentScale = ContentScale.FillWidth,
                     placeholder = ColorPainter(Color.Black),

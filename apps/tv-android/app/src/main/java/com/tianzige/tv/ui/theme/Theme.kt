@@ -78,7 +78,7 @@ class TzType(dimens: TzDimens) {
 @Immutable
 class Tz(val dimens: TzDimens, val type: TzType)
 
-val LocalTz = staticCompositionLocalOf<Tz> { error("TzTheme 没有包在外层") }
+val LocalTz = staticCompositionLocalOf<Tz> { error("TzTheme is missing") }
 
 private val TzColorScheme = darkColorScheme(
     primary = Accent,

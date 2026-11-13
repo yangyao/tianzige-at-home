@@ -17,17 +17,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.tianzige.tv.R
 import com.tianzige.tv.domain.DayLogic
 import com.tianzige.tv.domain.DayState
-import com.tianzige.tv.ui.components.Chip
-import com.tianzige.tv.ui.components.KeyHint
 import com.tianzige.tv.ui.theme.Accent
-import com.tianzige.tv.ui.theme.Flower
 import com.tianzige.tv.ui.theme.LocalTz
 import com.tianzige.tv.ui.theme.TextDim
 import com.tianzige.tv.ui.theme.TextPrimary
 import com.tianzige.tv.ui.theme.TextSecondary
-import com.tianzige.tv.ui.theme.Warn
 import com.tianzige.tv.vm.HomeUiState
 
 /** 首屏展示当天全部学科；日期与照片参与原生焦点导航，屏幕不常驻操作说明。 */
@@ -62,7 +60,6 @@ private fun TopBar(state: HomeUiState) {
     val key = DayLogic.format(date)
     val serverDay = state.day?.takeIf { it.date == key }
     val isToday = date == state.today
-    val chip = DayLogic.relativeChip(serverDay?.daysAgo)
 
     Row(
         modifier = Modifier
@@ -71,14 +68,14 @@ private fun TopBar(state: HomeUiState) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = DayLogic.titleFor(date, isToday, serverDay?.daysAgo),
+            text = dayTitleText(date, isToday, serverDay?.daysAgo),
             style = tz.type.h1,
             color = TextPrimary,
             maxLines = 1,
         )
         Spacer(Modifier.width(dims.dp(28f)))
         Text(
-            text = DayLogic.headerLine(date),
+            text = headerText(date),
             style = tz.type.body,
             color = TextSecondary,
             maxLines = 1,
@@ -106,7 +103,7 @@ private fun Content(state: HomeUiState, vm: com.tianzige.tv.vm.HomeViewModel, mo
 private fun LoadingPanel() {
     val tz = LocalTz.current
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("正在打开今天的作业…", style = tz.type.body, color = TextDim)
+        Text(stringResource(R.string.loading), style = tz.type.body, color = TextDim)
     }
 }
 
@@ -119,13 +116,17 @@ private fun ErrorPanel(state: HomeUiState) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("连不上家里", style = tz.type.h1, color = TextPrimary)
+        Text(stringResource(R.string.error_title), style = tz.type.h1, color = TextPrimary)
         Spacer(Modifier.height(dims.dp(20f)))
-        Text(text = state.fatalError ?: "网络好像不通", style = tz.type.body, color = TextSecondary)
+        Text(
+            text = state.fatalError?.let { errorKindText(it) } ?: stringResource(R.string.error_panel_fallback),
+            style = tz.type.body,
+            color = TextSecondary,
+        )
         Spacer(Modifier.height(dims.dp(10f)))
         Text(text = state.serverUrl, style = tz.type.caption, color = TextDim)
         Spacer(Modifier.height(dims.dp(32f)))
-        Text("检查连接", style = tz.type.body, color = Accent)
+        Text(stringResource(R.string.error_check), style = tz.type.body, color = Accent)
     }
 }
 
@@ -138,8 +139,11 @@ private fun EmptyPanel(isToday: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(text = DayLogic.emptyTitle(isToday), style = tz.type.display, color = TextDim)
+        Text(
+            text = stringResource(if (isToday) R.string.empty_today else R.string.empty_day),
+            style = tz.type.display,
+            color = TextDim,
+        )
         Spacer(Modifier.height(dims.dp(26f)))
-
     }
 }

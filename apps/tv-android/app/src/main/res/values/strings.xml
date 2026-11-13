@@ -1,4 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 默认语言：英文。其他语言环境（德语、日语…）回退到这里。 -->
 <resources>
-    <string name="app_name">家里的田字格</string>
+    <string name="app_name">Tianzige</string>
+
+    <!-- 首页 -->
+    <string name="loading">Opening today\'s homework…</string>
+    <string name="title_today">Today\'s homework</string>
+    <string name="title_yesterday">Yesterday\'s homework</string>
+    <string name="title_date">Homework for %1$s</string>
+    <!-- 日期片段：英文 "Nov 9"；中文用 "%1$s%2$d日" -->
+    <string name="date_short">%1$s %2$d</string>
+    <!-- 完整日期 + 星期：英文 "Wed, Nov 12, 2026" -->
+    <string name="header_line">%2$s, %1$s</string>
+    <string name="empty_today">No homework yet today</string>
+    <string name="empty_day">No homework for this day</string>
+    <string name="error_title">Can\'t reach home</string>
+    <string name="error_panel_fallback">The network seems to be down</string>
+    <string name="error_check">Check connection</string>
+
+    <!-- 错误 -->
+    <string name="error_timeout">Connection timed out</string>
+    <string name="error_host">Can\'t find that address</string>
+    <string name="error_connect">Can\'t reach the server</string>
+    <string name="error_data">Couldn\'t read the response</string>
+    <string name="error_address">That address doesn\'t look right</string>
+    <string name="error_network">The network is down</string>
+    <string name="error_unknown">Something went wrong</string>
+
+    <!-- 看图 -->
+    <string name="no_photo">No photo</string>
+    <string name="cd_homework_photo">Homework photo</string>
+
+    <!-- 设置 -->
+    <string name="server_address">Server address</string>
+    <string name="server_hint">The TV and the NAS need to be on the same WiFi. Default is http://nas.local:8080 — you can also enter the NAS IP and port.</string>
+    <string name="server_address_empty">Tap the number keys below to enter the address</string>
+    <string name="settings_hint">Arrow keys move · OK types · Menu goes back</string>
+    <string name="notice_unreachable">Can\'t reach the server — check the address</string>
+    <string name="notice_bad_address">That address doesn\'t look right, e.g. 192.168.1.8:8080</string>
+    <string name="notice_testing">Connecting…</string>
+    <string name="notice_connected">Connected · server %1$s</string>
+    <string name="notice_version_unknown">unknown</string>
+    <string name="notice_failed">Can\'t connect: %1$s</string>
+    <string name="save">Save</string>
+    <string name="test_connection">Test connection</string>
+    <string name="clear">Clear</string>
+
+    <!-- 退出确认 -->
+    <string name="exit_question">Exit?</string>
+    <string name="keep_watching">Keep watching</string>
+    <string name="exit">Exit</string>
+    <string name="exit_hint">← → choose · OK confirm · Back keeps watching</string>
+
+    <!-- 相对日期 -->
+    <string name="tomorrow">Tomorrow</string>
+    <plurals name="days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <plurals name="days_in">
+        <item quantity="one">in %1$d day</item>
+        <item quantity="other">in %1$d days</item>
+    </plurals>
 </resources>

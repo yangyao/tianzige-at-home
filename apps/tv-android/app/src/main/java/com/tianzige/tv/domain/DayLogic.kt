@@ -5,6 +5,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
@@ -15,13 +17,34 @@ import java.util.Locale
 enum class DayState { EMPTY, PENDING, READY }
 
 /**
+ * 标题的三种形态。domain 只负责判断「是哪一种」，具体措辞由 UI 查 R.string 拼，
+ * 这样纯 JVM 单测不需要 Android 资源。
+ */
+sealed interface DayTitle {
+    data object Today : DayTitle
+    data object Yesterday : DayTitle
+
+    /** 其他日期：月份缩写 + 日号（英文 "Nov" + 9，中文 "11月" + 9）。 */
+    data class Other(val month: String, val day: Int) : DayTitle
+}
+
+/** 相对日期的角标同样只返回语义，文案与单复数交给 UI 的 plurals。 */
+sealed interface RelativeLabel {
+    data object Tomorrow : RelativeLabel
+    data class DaysAgo(val days: Int) : RelativeLabel
+    data class InDays(val days: Int) : RelativeLabel
+}
+
+/** 顶栏副标题的两个片段，顺序由 UI 的 header_line 模板决定（中英文语序不同）。 */
+data class DayHeader(val date: String, val weekday: String)
+
+/**
  * 日期、标题、状态这些「算出来」的东西全部放在这里，纯函数，有单元测试。
  * 不碰 Android 框架，不读时钟（`today` 一律由调用方传进来）。
+ * 所有格式化方法都显式接收 [locale]，由调用方传系统当前语言。
  */
 object DayLogic {
 
-    private val WEEKDAY_LONG = listOf("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日")
-    private val WEEKDAY_SHORT = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
     private val HH_MM = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
 
     // ---------- 日期 ----------
@@ -55,13 +78,27 @@ object DayLogic {
     fun canGoForward(date: LocalDate, today: LocalDate): Boolean =
         date.isBefore(today.plusDays(MAX_DAYS_FORWARD.toLong()))
 
-    fun weekdayShort(date: LocalDate): String = WEEKDAY_SHORT[date.dayOfWeek.value - 1]
+    fun weekdayShort(date: LocalDate, locale: Locale): String =
+        date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
 
-    fun weekdayLong(date: LocalDate): String = WEEKDAY_LONG[date.dayOfWeek.value - 1]
+    fun weekdayLong(date: LocalDate, locale: Locale): String =
+        date.dayOfWeek.getDisplayName(TextStyle.FULL, locale)
 
-    /** 顶栏副标题：2026年11月12日 星期四 */
-    fun headerLine(date: LocalDate): String =
-        "${date.year}年${date.monthValue}月${date.dayOfMonth}日 ${weekdayLong(date)}"
+    /** 单个月的缩写：英文 "Nov"，中文 "11月"（不含日号，日号由 UI 模板补）。 */
+    fun monthShort(date: LocalDate, locale: Locale): String =
+        date.month.getDisplayName(TextStyle.SHORT, locale)
+
+    /**
+     * 顶栏副标题：中文「2026年11月12日 星期四」，英文「Wed, Nov 12, 2026」。
+     * 日期用系统本地化格式，星期缩写的中英文风格不同（中文用全称，英文用短名）。
+     */
+    fun header(date: LocalDate, locale: Locale): DayHeader {
+        val dateText = date.format(
+            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+        )
+        val weekday = if (locale.language == "zh") weekdayLong(date, locale) else weekdayShort(date, locale)
+        return DayHeader(dateText, weekday)
+    }
 
     // ---------- 标题与角标 ----------
 
@@ -69,21 +106,19 @@ object DayLogic {
      * 标题。`isToday` / `daysAgo` 来自服务端（协议 §6：电视系统时间经常是错的，
      * 相对天数不要自己用本地时钟减），本地只在拿不到数据时兜底。
      */
-    fun titleFor(date: LocalDate, isToday: Boolean, daysAgo: Int?): String = when {
-        isToday -> "今天的作业"
-        daysAgo == 1 -> "昨天的作业"
-        else -> "${date.monthValue}月${date.dayOfMonth}日的作业"
+    fun titleFor(date: LocalDate, isToday: Boolean, daysAgo: Int?, locale: Locale): DayTitle = when {
+        isToday -> DayTitle.Today
+        daysAgo == 1 -> DayTitle.Yesterday
+        else -> DayTitle.Other(monthShort(date, locale), date.dayOfMonth)
     }
 
     /** 「3 天前」角标。今天 / 昨天不挂角标（设计稿：diff==0/1 不显示）。 */
-    fun relativeChip(daysAgo: Int?): String? = when {
+    fun relativeChip(daysAgo: Int?): RelativeLabel? = when {
         daysAgo == null || daysAgo == 0 || daysAgo == 1 -> null
-        daysAgo < 0 -> if (daysAgo == -1) "明天" else "${-daysAgo} 天后"
-        else -> "$daysAgo 天前"
+        daysAgo == -1 -> RelativeLabel.Tomorrow
+        daysAgo < 0 -> RelativeLabel.InDays(-daysAgo)
+        else -> RelativeLabel.DaysAgo(daysAgo)
     }
-
-    /** 空状态主文案。今天用规范原句，历史日期换成「这天」。 */
-    fun emptyTitle(isToday: Boolean): String = if (isToday) "今天还没有作业" else "这天还没有作业"
 
     // ---------- 三态映射 ----------
 

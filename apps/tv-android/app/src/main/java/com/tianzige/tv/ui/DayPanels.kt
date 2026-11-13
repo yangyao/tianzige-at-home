@@ -17,7 +17,9 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
+import com.tianzige.tv.R
 import com.tianzige.tv.data.DayView
 import com.tianzige.tv.domain.DayLogic
 import com.tianzige.tv.ui.theme.*
@@ -66,7 +68,7 @@ fun ReadyPanel(day: DayView, baseUrl: String, vm: HomeViewModel) {
         ) {
             day.subjects.forEach { group ->
                 Column(verticalArrangement = Arrangement.spacedBy(dims.dp(12f))) {
-                    Text(group.subject, style = tz.type.body, color = Accent)
+                    Text(subjectText(group.subject), style = tz.type.body, color = Accent)
                     group.items.forEach { item ->
                         Text(item.content, style = tz.type.h2, color = TextPrimary)
                     }
@@ -98,7 +100,7 @@ private fun PhotoCard(url: String?, modifier: Modifier, onFocus: () -> Unit, onO
         if (url != null) {
             AsyncImage(
                 model = url,
-                contentDescription = "作业原图",
+                contentDescription = stringResource(R.string.cd_homework_photo),
                 modifier = Modifier.fillMaxSize().padding(dims.dp(5f)),
                 contentScale = ContentScale.Fit,
                 placeholder = ColorPainter(BgSurface),

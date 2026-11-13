@@ -30,7 +30,7 @@ class TvApi {
 
     suspend fun health(base: String): HealthResponse {
         val result = apiJson.decodeFromString<HealthResponse>(get(base, "api/health"))
-        if (!result.ok) throw IOException("家里的服务暂时不可用")
+        if (!result.ok) throw IOException("Server unavailable")
         return result
     }
 
@@ -47,8 +47,8 @@ class TvApi {
                 override fun onResponse(call: Call, response: Response) {
                     try {
                         val text = response.use {
-                            if (!it.isSuccessful) throw IOException("家里的服务暂时不可用（${it.code}）")
-                            it.body?.string() ?: throw IOException("家里的服务没有返回内容")
+                            if (!it.isSuccessful) throw IOException("Server unavailable (${it.code})")
+                            it.body?.string() ?: throw IOException("Empty response from server")
                         }
                         if (continuation.isActive) continuation.resume(text)
                     } catch (e: Exception) {
