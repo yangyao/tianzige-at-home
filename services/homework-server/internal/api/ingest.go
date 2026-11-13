@@ -31,7 +31,7 @@ type stagedFile struct {
 
 func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	ctx := r.Context()
@@ -39,10 +39,10 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(16 << 20); err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeError(w, http.StatusRequestEntityTooLarge, "file_too_large", "单张图片不能超过 20MB")
+			writeError(w, r, http.StatusRequestEntityTooLarge, "file_too_large", "err.file_too_large")
 			return
 		}
-		writeError(w, http.StatusBadRequest, "bad_request", "上传表单解析失败："+err.Error())
+		writeErrorf(w, r, http.StatusBadRequest, "bad_request", "err.upload_parse", err.Error())
 		return
 	}
 	defer func() {
@@ -54,16 +54,16 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 	files := r.MultipartForm.File["files"]
 	switch {
 	case len(files) == 0:
-		writeError(w, http.StatusBadRequest, "bad_request", "请至少上传一张图片")
+		writeError(w, r, http.StatusBadRequest, "bad_request", "err.no_files")
 		return
 	case len(files) > maxFiles:
-		writeError(w, http.StatusBadRequest, "too_many_files", fmt.Sprintf("一次最多 %d 张图片", maxFiles))
+		writeErrorf(w, r, http.StatusBadRequest, "too_many_files", "err.too_many_files", maxFiles)
 		return
 	}
 
 	note := strings.TrimSpace(r.FormValue("note"))
 	if utf8.RuneCountInString(note) > maxNoteRunes {
-		writeError(w, http.StatusBadRequest, "bad_request", fmt.Sprintf("备注不能超过 %d 字", maxNoteRunes))
+		writeErrorf(w, r, http.StatusBadRequest, "bad_request", "err.note_too_long", maxNoteRunes)
 		return
 	}
 
@@ -71,14 +71,14 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 	if date == "" {
 		date = store.Today()
 	} else if !store.ValidDate(date) {
-		writeError(w, http.StatusBadRequest, "invalid_date", "日期格式应为 YYYY-MM-DD")
+		writeError(w, r, http.StatusBadRequest, "invalid_date", "err.invalid_date_format")
 		return
 	}
 
 	staged, apiErr := s.stageFiles(files)
 	if apiErr != nil {
 		removeTemps(staged)
-		writeError(w, apiErr.status, apiErr.code, apiErr.message)
+		writeError(w, r, apiErr.status, apiErr.code, apiErr.msgKey)
 		return
 	}
 
@@ -89,14 +89,14 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 	dupID, dup, err := s.st.FindBatchByImages(ctx, shas)
 	if err != nil {
 		removeTemps(staged)
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	if dup {
 		removeTemps(staged)
 		existing, err := s.st.GetBatch(ctx, dupID)
 		if err != nil {
-			s.internal(w, err)
+			s.internal(w, r, err)
 			return
 		}
 		s.logger.Printf("软去重命中: 批次 %d", dupID)
@@ -117,7 +117,7 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 	batchID, err := s.st.CreateBatch(ctx, date, note, metas)
 	if err != nil {
 		removeTemps(staged)
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 
@@ -128,7 +128,7 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 			s.logger.Printf("回滚批次 %d 失败: %v", batchID, delErr)
 		}
 		removeTemps(staged)
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	if err := s.moveIntoPlace(staged, batch); err != nil {
@@ -137,7 +137,7 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 		}
 		removeTemps(staged)
 		removeBatchFiles(s.dataDir, batch)
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 
@@ -152,9 +152,9 @@ func (s *Server) handleIngest(w http.ResponseWriter, r *http.Request) {
 }
 
 type httpError struct {
-	status  int
-	code    string
-	message string
+	status int
+	code   string
+	msgKey string
 }
 
 // stageFiles 把每个上传文件写到 dataDir/tmp，同时算 sha256、嗅探类型、读宽高。
@@ -163,24 +163,24 @@ func (s *Server) stageFiles(files []*multipart.FileHeader) ([]stagedFile, *httpE
 	staged := make([]stagedFile, 0, len(files))
 	for idx, fh := range files {
 		if fh.Size > maxFileSize {
-			return staged, &httpError{http.StatusRequestEntityTooLarge, "file_too_large", "单张图片不能超过 20MB"}
+			return staged, &httpError{http.StatusRequestEntityTooLarge, "file_too_large", "err.file_too_large"}
 		}
 		src, err := fh.Open()
 		if err != nil {
-			return staged, &httpError{http.StatusBadRequest, "bad_request", "读取上传文件失败"}
+			return staged, &httpError{http.StatusBadRequest, "bad_request", "err.read_upload"}
 		}
 		head := make([]byte, 512)
 		n, _ := io.ReadFull(src, head)
 		ext, ok := detectExt(head[:n], fh.Filename)
 		if !ok {
 			src.Close()
-			return staged, &httpError{http.StatusUnsupportedMediaType, "unsupported_type", "只接受 jpg/png/heic/webp 图片"}
+			return staged, &httpError{http.StatusUnsupportedMediaType, "unsupported_type", "err.unsupported_type"}
 		}
 
 		tmp, err := os.CreateTemp(tmpDir, fmt.Sprintf("ingest-%d-*.part", idx))
 		if err != nil {
 			src.Close()
-			return staged, &httpError{http.StatusInternalServerError, "internal", "写入临时文件失败"}
+			return staged, &httpError{http.StatusInternalServerError, "internal", "err.temp_file"}
 		}
 		hasher := sha256.New()
 		size, err := io.Copy(io.MultiWriter(tmp, hasher), io.LimitReader(io.MultiReader(bytes.NewReader(head[:n]), src), maxFileSize+1))
@@ -190,11 +190,11 @@ func (s *Server) stageFiles(files []*multipart.FileHeader) ([]stagedFile, *httpE
 		}
 		if err != nil {
 			os.Remove(tmp.Name())
-			return staged, &httpError{http.StatusBadRequest, "bad_request", "保存上传文件失败"}
+			return staged, &httpError{http.StatusBadRequest, "bad_request", "err.save_upload"}
 		}
 		if size > maxFileSize {
 			os.Remove(tmp.Name())
-			return staged, &httpError{http.StatusRequestEntityTooLarge, "file_too_large", "单张图片不能超过 20MB"}
+			return staged, &httpError{http.StatusRequestEntityTooLarge, "file_too_large", "err.file_too_large"}
 		}
 		w, h := imageDims(tmp.Name())
 		staged = append(staged, stagedFile{

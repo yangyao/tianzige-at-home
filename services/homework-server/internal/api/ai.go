@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/aiconfig"
+	"github.com/yangyao/tianzige-at-home/homework-server/internal/i18n"
 )
 
 // Provider management is same-origin only, unlike the upload API.
@@ -25,16 +26,16 @@ func (s *Server) handleAI(w http.ResponseWriter, r *http.Request) {
 			scheme = "https"
 		}
 		if err != nil || u.Host != r.Host || u.Scheme != scheme {
-			writeError(w, http.StatusForbidden, "same_origin_required", "请从 NAS 上传页打开 AI 设置")
+			writeError(w, r, http.StatusForbidden, "same_origin_required", "ai.same_origin_required")
 			return
 		}
 	}
 	if r.Header.Get("Sec-Fetch-Site") == "cross-site" {
-		writeError(w, http.StatusForbidden, "same_origin_required", "请从 NAS 上传页打开 AI 设置")
+		writeError(w, r, http.StatusForbidden, "same_origin_required", "ai.same_origin_required")
 		return
 	}
 	if s.ai == nil {
-		writeError(w, http.StatusServiceUnavailable, "unavailable", "AI 设置暂不可用")
+		writeError(w, r, http.StatusServiceUnavailable, "unavailable", "ai.unavailable")
 		return
 	}
 	if r.URL.Path == "/api/settings/ai" && r.Method == http.MethodGet {
@@ -43,12 +44,12 @@ func (s *Server) handleAI(w http.ResponseWriter, r *http.Request) {
 	}
 	if (r.URL.Path == "/api/settings/ai" && r.Method != http.MethodPut) ||
 		(r.URL.Path == "/api/settings/ai/test" && r.Method != http.MethodPost) {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || mediaType != "application/json" {
-		writeError(w, http.StatusUnsupportedMediaType, "bad_request", "请使用 JSON 提交设置")
+		writeError(w, r, http.StatusUnsupportedMediaType, "bad_request", "ai.json_required")
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
@@ -56,26 +57,28 @@ func (s *Server) handleAI(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 	var input aiconfig.Config
 	if err := decoder.Decode(&input); err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", "AI 设置格式不正确或内容过长")
+		writeError(w, r, http.StatusBadRequest, "bad_request", "ai.invalid_body")
 		return
 	}
 	if decoder.Decode(&struct{}{}) != io.EOF {
-		writeError(w, http.StatusBadRequest, "bad_request", "只能提交一组 AI 设置")
+		writeError(w, r, http.StatusBadRequest, "bad_request", "ai.single_body")
 		return
 	}
 	if strings.HasSuffix(r.URL.Path, "/test") {
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
+		lang := i18n.Lang(r)
 		if err := s.ai.Test(ctx, input); err != nil {
-			writeError(w, http.StatusBadRequest, "provider_test_failed", err.Error())
+			// 上游错误原文不可翻译，只本地化前缀；本地校验错误按原文换成对应语言。
+			writeErrorMessage(w, http.StatusBadRequest, "provider_test_failed", i18n.Msgf(lang, "ai.test_failed", i18n.FromSource(lang, err.Error())))
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "连接成功，模型接受了图片请求。测试没有修改已保存的配置。"})
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": i18n.Msg(lang, "ai.test_ok")})
 		return
 	}
 	view, err := s.ai.Save(input)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_config", err.Error())
+		writeErrorMessage(w, http.StatusBadRequest, "invalid_config", i18n.FromSource(i18n.Lang(r), err.Error()))
 		return
 	}
 	writeJSON(w, http.StatusOK, view)

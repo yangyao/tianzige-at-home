@@ -18,17 +18,17 @@ const (
 
 func (s *Server) handleDay(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	date, err := dateParam(r)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid_date", "日期格式应为 YYYY-MM-DD")
+		writeError(w, r, http.StatusBadRequest, "invalid_date", "err.invalid_date_format")
 		return
 	}
 	batches, err := s.st.BatchesByDate(r.Context(), date)
 	if err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, buildDayView(date, batches))
@@ -36,32 +36,32 @@ func (s *Server) handleDay(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDays(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	q := r.URL.Query()
 	from := strings.TrimSpace(q.Get("from"))
 	to := strings.TrimSpace(q.Get("to"))
 	if from == "" || to == "" {
-		writeError(w, http.StatusBadRequest, "bad_request", "from 与 to 都是必填参数")
+		writeError(w, r, http.StatusBadRequest, "bad_request", "err.from_to_required")
 		return
 	}
 	if !store.ValidDate(from) || !store.ValidDate(to) {
-		writeError(w, http.StatusBadRequest, "invalid_date", "日期格式应为 YYYY-MM-DD")
+		writeError(w, r, http.StatusBadRequest, "invalid_date", "err.invalid_date_format")
 		return
 	}
 	span, err := daysBetween(from, to)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", "结束日期不能早于开始日期")
+		writeError(w, r, http.StatusBadRequest, "bad_request", "err.date_order")
 		return
 	}
 	if span > 62 {
-		writeError(w, http.StatusBadRequest, "bad_request", "一次最多查询 62 天")
+		writeError(w, r, http.StatusBadRequest, "bad_request", "err.max_days")
 		return
 	}
 	marks, err := s.st.DayMarks(r.Context(), from, to)
 	if err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	byDate := make(map[string]store.DayMark, len(marks))

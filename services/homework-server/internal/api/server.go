@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/aiconfig"
+	"github.com/yangyao/tianzige-at-home/homework-server/internal/i18n"
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/pipeline"
 	"github.com/yangyao/tianzige-at-home/homework-server/internal/store"
 )
@@ -59,6 +60,8 @@ func (s *Server) SetOCRStatus(f func() string) {
 func (s *Server) SetAI(manager *aiconfig.Manager) { s.ai = manager }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// 错误文案随 Accept-Language 变化，代理/CDN 必须按语言分键缓存。
+	w.Header().Add("Vary", "Accept-Language")
 	if r.URL.Path == "/api/settings/ai" || r.URL.Path == "/api/settings/ai/test" {
 		s.handleAI(w, r)
 		return
@@ -100,7 +103,7 @@ func setCORS(w http.ResponseWriter) {
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	dbState := "ok"
@@ -120,12 +123,12 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 	rest := strings.TrimPrefix(r.URL.Path, "/api/batch/")
 	parts := strings.Split(strings.Trim(rest, "/"), "/")
 	if len(parts) == 0 || parts[0] == "" {
-		writeNotFound(w, "批次不存在")
+		writeNotFound(w, r, "err.batch_not_found")
 		return
 	}
 	id, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil || id < 1 {
-		writeNotFound(w, "批次不存在")
+		writeNotFound(w, r, "err.batch_not_found")
 		return
 	}
 
@@ -137,27 +140,27 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 		case http.MethodDelete:
 			s.deleteBatch(w, r, id)
 		default:
-			methodNotAllowed(w)
+			methodNotAllowed(w, r)
 		}
 	case len(parts) == 2 && parts[1] == "rerun":
 		if r.Method != http.MethodPost {
-			methodNotAllowed(w)
+			methodNotAllowed(w, r)
 			return
 		}
 		s.rerunBatch(w, r, id)
 	default:
-		writeNotFound(w, "接口不存在")
+		writeNotFound(w, r, "err.api_not_found")
 	}
 }
 
 // handleStatic 挂载 -web 指定的目录到根路径。
 func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 	if s.webDir == "" {
-		writeNotFound(w, "接口不存在")
+		writeNotFound(w, r, "err.api_not_found")
 		return
 	}
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	// 交给 FileServer 做目录索引与路径清理；webDir 是用户显式指定的目录。
@@ -179,21 +182,31 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	}
 }
 
-func writeError(w http.ResponseWriter, status int, code, message string) {
+func writeError(w http.ResponseWriter, r *http.Request, status int, code, msgKey string) {
+	writeErrorMessage(w, status, code, i18n.Msg(i18n.Lang(r), msgKey))
+}
+
+// writeErrorf 是带参数的版本，用于含数量的文案。
+func writeErrorf(w http.ResponseWriter, r *http.Request, status int, code, msgKey string, args ...any) {
+	writeErrorMessage(w, status, code, i18n.Msgf(i18n.Lang(r), msgKey, args...))
+}
+
+// writeErrorMessage 直接写出已本地化的 message，用于上游错误原文。
+func writeErrorMessage(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, errorPayload{Error: errorBody{Code: code, Message: message}})
 }
 
-func methodNotAllowed(w http.ResponseWriter) {
-	writeError(w, http.StatusMethodNotAllowed, "bad_request", "请求方法不支持")
+func methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	writeError(w, r, http.StatusMethodNotAllowed, "bad_request", "err.method_not_allowed")
 }
 
-func writeNotFound(w http.ResponseWriter, message string) {
-	writeError(w, http.StatusNotFound, "not_found", message)
+func writeNotFound(w http.ResponseWriter, r *http.Request, msgKey string) {
+	writeError(w, r, http.StatusNotFound, "not_found", msgKey)
 }
 
-func (s *Server) internal(w http.ResponseWriter, err error) {
+func (s *Server) internal(w http.ResponseWriter, r *http.Request, err error) {
 	s.logger.Printf("内部错误: %v", err)
-	writeError(w, http.StatusInternalServerError, "internal", "服务内部错误，请查看服务端日志")
+	writeError(w, r, http.StatusInternalServerError, "internal", "err.internal")
 }
 
 // ---------- 参数 ----------
@@ -214,35 +227,35 @@ var errInvalidDate = errors.New("invalid_date")
 
 func (s *Server) handleImage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	rest := strings.TrimPrefix(r.URL.Path, "/img/")
 	parts := strings.Split(rest, "/")
 	if len(parts) != 2 {
-		writeNotFound(w, "图片不存在")
+		writeNotFound(w, r, "err.image_not_found")
 		return
 	}
 	date, name := parts[0], parts[1]
 	if !store.ValidDate(date) || !safeName(name) {
-		writeNotFound(w, "图片不存在")
+		writeNotFound(w, r, "err.image_not_found")
 		return
 	}
 	root := filepath.Clean(s.dataDir)
 	full := filepath.Join(root, date, name)
 	if !strings.HasPrefix(full, root+string(os.PathSeparator)) {
-		writeNotFound(w, "图片不存在")
+		writeNotFound(w, r, "err.image_not_found")
 		return
 	}
 	f, err := os.Open(full)
 	if err != nil {
-		writeNotFound(w, "图片不存在")
+		writeNotFound(w, r, "err.image_not_found")
 		return
 	}
 	defer f.Close()
 	info, err := f.Stat()
 	if err != nil || info.IsDir() {
-		writeNotFound(w, "图片不存在")
+		writeNotFound(w, r, "err.image_not_found")
 		return
 	}
 	if ct := contentTypeByName(name); ct != "" {

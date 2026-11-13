@@ -13,7 +13,7 @@ import (
 
 func (s *Server) handleListBatches(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodNotAllowed(w)
+		methodNotAllowed(w, r)
 		return
 	}
 	q := r.URL.Query()
@@ -21,7 +21,7 @@ func (s *Server) handleListBatches(w http.ResponseWriter, r *http.Request) {
 	if raw := strings.TrimSpace(q.Get("limit")); raw != "" {
 		n, err := strconv.Atoi(raw)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "bad_request", "limit 应为 1–50 的整数")
+			writeError(w, r, http.StatusBadRequest, "bad_request", "err.limit_range")
 			return
 		}
 		if n < 1 {
@@ -34,13 +34,13 @@ func (s *Server) handleListBatches(w http.ResponseWriter, r *http.Request) {
 	}
 	date := strings.TrimSpace(q.Get("date"))
 	if date != "" && !store.ValidDate(date) {
-		writeError(w, http.StatusBadRequest, "invalid_date", "日期格式应为 YYYY-MM-DD")
+		writeError(w, r, http.StatusBadRequest, "invalid_date", "err.invalid_date_format")
 		return
 	}
 
 	sums, err := s.st.ListBatches(r.Context(), limit, date)
 	if err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	out := make([]batchSummary, 0, len(sums))
@@ -62,11 +62,11 @@ func (s *Server) handleListBatches(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getBatch(w http.ResponseWriter, r *http.Request, id int64) {
 	b, err := s.st.GetBatch(r.Context(), id)
 	if errors.Is(err, store.ErrNotFound) {
-		writeNotFound(w, "批次不存在")
+		writeNotFound(w, r, "err.batch_not_found")
 		return
 	}
 	if err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, batchToDetail(b))
@@ -75,11 +75,11 @@ func (s *Server) getBatch(w http.ResponseWriter, r *http.Request, id int64) {
 func (s *Server) deleteBatch(w http.ResponseWriter, r *http.Request, id int64) {
 	paths, err := s.st.DeleteBatch(r.Context(), id)
 	if errors.Is(err, store.ErrNotFound) {
-		writeNotFound(w, "批次不存在")
+		writeNotFound(w, r, "err.batch_not_found")
 		return
 	}
 	if err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	root := filepath.Clean(s.dataDir)
@@ -99,11 +99,11 @@ func (s *Server) deleteBatch(w http.ResponseWriter, r *http.Request, id int64) {
 func (s *Server) rerunBatch(w http.ResponseWriter, r *http.Request, id int64) {
 	b, err := s.st.GetBatch(r.Context(), id)
 	if errors.Is(err, store.ErrNotFound) {
-		writeNotFound(w, "批次不存在")
+		writeNotFound(w, r, "err.batch_not_found")
 		return
 	}
 	if err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 
@@ -115,15 +115,15 @@ func (s *Server) rerunBatch(w http.ResponseWriter, r *http.Request, id int64) {
 	}
 
 	if err := s.st.ReplaceItems(r.Context(), id, nil); err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	if err := s.st.ClearOCR(r.Context(), id); err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	if err := s.st.UpdateStatus(r.Context(), id, store.StatusPending, ""); err != nil {
-		s.internal(w, err)
+		s.internal(w, r, err)
 		return
 	}
 	s.pl.Enqueue(id)
