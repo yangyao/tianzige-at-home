@@ -1,0 +1,64 @@
+name: TianzigeTV
+
+fileGroups:
+  - Info.plist
+  - README.md
+
+options:
+  bundleIdPrefix: com.tianzige
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  # 英文是开发语言（也是 fallback）：非中文系统一律落到 en，中文系统走 zh-Hans。
+  developmentLanguage: en
+  knownRegions:
+    - en
+    - Base
+    - zh-Hans
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    CLANG_ENABLE_MODULES: YES
+
+targets:
+  Tianzige TV:
+    type: application
+    platform: macOS
+    sources:
+      # Resources 单独列出来：en.lproj / zh-Hans.lproj 里的同名文件会被合成
+      # 一个 PBXVariantGroup，buildPhase 固定为 resources。
+      - path: Sources
+        excludes:
+          - "Resources"
+      - path: Sources/Resources
+        buildPhase: resources
+      - path: Assets.xcassets
+    settings:
+      base:
+        PRODUCT_NAME: TianzigeTV
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        PRODUCT_BUNDLE_IDENTIFIER: com.tianzige.tv-mac
+        INFOPLIST_FILE: Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: NO
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+        ENABLE_PREVIEWS: YES
+
+schemes:
+  TianzigeTV:
+    build:
+      targets:
+        Tianzige TV: all
+    run:
+      config: Debug
+    archive:
+      config: Release

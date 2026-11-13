@@ -1,0 +1,53 @@
+/* Default language: English. Other locales (de, ja…) fall back to these. */
+
+/* Home */
+"loading" = "Opening today's homework…";
+"title_today" = "Today's homework";
+"title_yesterday" = "Yesterday's homework";
+"title_date" = "Homework for %1$@";
+/* Date fragment: "Nov 9"; Chinese uses "%1$@%2$d日" */
+"date_short" = "%1$@ %2$d";
+/* Full date + weekday: "Thu, Nov 12, 2026" */
+"header_line" = "%2$@, %1$@";
+"empty_today" = "No homework yet today";
+"empty_day" = "No homework for this day";
+"error_title" = "Can't reach home";
+"error_panel_fallback" = "The network seems to be down";
+"error_check" = "Check connection";
+
+/* Errors */
+"error_timeout" = "Connection timed out";
+"error_host" = "Can't find that address";
+"error_connect" = "Can't reach the server";
+"error_data" = "Couldn't read the response";
+"error_address" = "That address doesn't look right";
+"error_network" = "The network is down";
+"error_unknown" = "Something went wrong";
+
+/* Photos */
+"no_photo" = "No photo";
+"cd_homework_photo" = "Homework photo";
+"close" = "Close";
+
+/* Top bar chips */
+"chip_cached" = "cached";
+"chip_updated" = "Updated %1$@";
+
+/* Settings */
+"server_address" = "Server address";
+"server_hint" = "This Mac and the NAS need to be on the same network. Default is http://nas.local:8080 — you can also enter the NAS IP and port.";
+"notice_unreachable" = "Can't reach the server — check the address";
+"notice_bad_address" = "That address doesn't look right, e.g. 192.168.1.8:8080";
+"notice_testing" = "Connecting…";
+"notice_connected" = "Connected · server %1$@";
+"notice_version_unknown" = "unknown";
+"notice_failed" = "Can't connect: %1$@";
+"save" = "Save";
+"test_connection" = "Test connection";
+"clear" = "Clear";
+
+/* Menu */
+"menu.settings" = "Settings…";
+
+/* Window */
+"window.title" = "Tianzige TV";

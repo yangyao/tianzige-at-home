@@ -124,6 +124,7 @@ On the NAS the service currently runs as a user-level daemon, not registered to 
 | Directory | Contents |
 | --- | --- |
 | `apps/tv-android/` | Android TV: photos, dates, homework |
+| `apps/tv-mac/` | Mac display app (same UI as the TV app) |
 | `apps/upload-ios/` | iPhone camera and library upload |
 | `apps/upload-mac/` | Mac drag, paste and menu bar upload |
 | `apps/upload-web/` | Web upload page and AI settings |

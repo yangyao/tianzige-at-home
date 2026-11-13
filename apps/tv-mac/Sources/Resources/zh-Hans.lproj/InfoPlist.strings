@@ -1,0 +1,4 @@
+/* 简体中文 */
+"CFBundleDisplayName" = "家里的田字格 TV";
+"NSHumanReadableCopyright" = "家用小工具 — 只访问局域网。";
+"NSLocalNetworkUsageDescription" = "需要连到家里的 NAS，才能显示今天的作业。";

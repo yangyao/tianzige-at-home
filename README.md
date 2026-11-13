@@ -97,6 +97,7 @@ NAS 当前为用户级常驻服务，尚未注册重启自动启动。QQ 机器�
 | 目录 | 内容 |
 | --- | --- |
 | `apps/tv-android/` | Android TV 原图、日期和作业展示 |
+| `apps/tv-mac/` | Mac 作业展示端（与 TV 端同款界面） |
 | `apps/upload-ios/` | iPhone 拍照与相册上传 |
 | `apps/upload-mac/` | Mac 拖拽、粘贴与菜单栏上传 |
 | `apps/upload-web/` | 网页上传和 AI 服务设置 |
