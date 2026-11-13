@@ -1,0 +1,80 @@
+/*
+ * upload-ios 界面文案（英文，开发语言 / 回退语言）。
+ * 术语与语气见 docs/12-国际化.md；key 为语义名，不用中文当 key。
+ * 带参数的一律用 %1$d / %1$@，不要用 %d 顺序拼接。
+ */
+
+/* 应用名 */
+"app.name" = "Tianzige";
+"app.subtitle" = "Homework";
+
+/* 设置页 */
+"settings.title" = "Settings";
+"settings.done" = "Done";
+"settings.nasAddress" = "Server address";
+"settings.presetHint" = "The home NAS address is preset — change it if needed.";
+"settings.testConnection" = "Test connection";
+"settings.testing" = "Connecting…";
+"settings.connected" = "Connected · server version %1$@";
+"settings.hint.uploadOnly" = "This app only sends the photos. Once they're in, you can switch away — they'll show up on the TV.";
+"settings.hint.lanOnly" = "Home network only — photos never leave your LAN.";
+
+/* 错误文案：优先按服务端 error.code 映射，message 只作兜底 */
+"error.badRequest" = "Something's wrong with the request";
+"error.invalidDate" = "That date doesn't look right";
+"error.tooManyFiles" = "Up to 6 photos at a time";
+"error.fileTooLarge" = "Each photo must be under 20 MB";
+"error.unsupportedType" = "Only jpg, png, heic or webp";
+"error.notFound" = "Not found";
+"error.ocrFailed" = "Couldn't read this one";
+"error.parseFailed" = "Couldn't sort out the homework";
+"error.llmUnavailable" = "The AI service isn't available";
+"error.internal" = "Something went wrong on the server";
+"error.timeout" = "Couldn't upload — check your Wi-Fi and try again";
+"error.uploadFailed" = "Couldn't upload — tap to retry";
+"error.badResponse" = "Couldn't read the NAS response — check the address";
+"error.offline" = "Can't reach the NAS — check the address or network";
+"error.noCamera" = "No camera on this device";
+"error.tooMany" = "Up to %1$d photos — remove a few first";
+"error.tooManyOverflow" = "Up to %1$d photos — the rest weren't added";
+"error.unreadable" = "Couldn't read these — try other photos";
+"error.clipboardEmpty" = "No usable image in the clipboard";
+
+/* 上传区 */
+"upload.title" = "Drop the homework photos here";
+"upload.subtitle" = "Choose from your library, or take a photo";
+"upload.fromLibrary" = "Choose from library";
+"upload.takePhoto" = "Take a photo";
+"upload.compressing" = "Getting photos ready…";
+"upload.uploading" = "Uploading…";
+"upload.retry" = "Couldn't upload — tap to retry";
+"upload.button" = "Upload photos";
+"upload.button.count.one" = "Upload 1 photo";
+"upload.button.count" = "Upload %1$d photos";
+"upload.success.one" = "Got 1 photo. It'll be on the TV shortly.";
+"upload.success.count" = "Got %1$d photos. They'll be on the TV shortly.";
+"upload.duplicate" = "These were uploaded before — nothing new added";
+
+/* 剪贴板提示 */
+"clipboard.hint" = "Found an image in the clipboard. Add it?";
+"clipboard.add" = "Add";
+"clipboard.dismiss" = "Not now";
+
+/* 已选图片 */
+"image.remove" = "Remove this photo";
+"image.remaining.one" = "Room for 1 more";
+"image.remaining" = "Room for %1$d more";
+
+/* 老师的话 */
+"note.label" = "Note from the teacher (optional)";
+"note.placeholder" = "Paste the teacher's note here";
+
+/* 日期 */
+"date.label" = "Homework date";
+"date.picker" = "Date";
+"date.today" = "Today";
+"date.yesterday" = "Yesterday";
+
+/* 其他 */
+"footer.leaveEarly" = "You can leave once it's sent — no need to wait";
+"root.offlineBanner.hint" = "Open Settings to check the NAS address";

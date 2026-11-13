@@ -1,0 +1,78 @@
+/*
+ * upload-ios 界面文案（简体中文）。key 必须与 en.lproj 完全一致。
+ */
+
+/* 应用名 */
+"app.name" = "家里的田字格";
+"app.subtitle" = "作业上传";
+
+/* 设置页 */
+"settings.title" = "设置";
+"settings.done" = "完成";
+"settings.nasAddress" = "NAS 地址";
+"settings.presetHint" = "已预设家里的 NAS 地址，需要时可修改。";
+"settings.testConnection" = "测试连接";
+"settings.testing" = "正在连接…";
+"settings.connected" = "已连接 · 服务端版本 %1$@";
+"settings.hint.uploadOnly" = "这个 App 只负责把照片传上去。传完就可以切走，电视上自己会出来，不用等。";
+"settings.hint.lanOnly" = "只在家里局域网里用，照片不会出公网。";
+
+/* 错误文案：优先按服务端 error.code 映射，message 只作兜底 */
+"error.badRequest" = "请求有问题";
+"error.invalidDate" = "日期格式不对";
+"error.tooManyFiles" = "一次最多 6 张";
+"error.fileTooLarge" = "单张不能超过 20MB";
+"error.unsupportedType" = "只支持 jpg/png/heic/webp";
+"error.notFound" = "找不到这个记录";
+"error.ocrFailed" = "这次没识别出来";
+"error.parseFailed" = "整理作业时出错了";
+"error.llmUnavailable" = "AI 服务暂时不可用";
+"error.internal" = "服务出了点问题";
+"error.timeout" = "没传上去，检查一下 Wi-Fi 再试";
+"error.uploadFailed" = "这次没传上去，点一下再试";
+"error.badResponse" = "NAS 回的内容看不懂，检查地址对不对";
+"error.offline" = "连不上 NAS，检查地址或网络";
+"error.noCamera" = "这台设备没有可用的相机";
+"error.tooMany" = "一次最多 %1$d 张，先删掉几张再选";
+"error.tooManyOverflow" = "一次最多 %1$d 张，多的这次没放进来";
+"error.unreadable" = "这几张读不出来，换几张试试";
+"error.clipboardEmpty" = "剪贴板里没有能用的图片";
+
+/* 上传区 */
+"upload.title" = "把作业照片放进来";
+"upload.subtitle" = "从相册选，或直接拍";
+"upload.fromLibrary" = "从相册选";
+"upload.takePhoto" = "拍照";
+"upload.compressing" = "正在整理照片…";
+"upload.uploading" = "上传中…";
+"upload.retry" = "没传上去，点这里重试";
+"upload.button" = "上传照片";
+"upload.button.count.one" = "上传 1 张";
+"upload.button.count" = "上传 %1$d 张";
+"upload.success.one" = "收到 1 张，处理完电视上就有";
+"upload.success.count" = "收到 %1$d 张，处理完电视上就有";
+"upload.duplicate" = "这些图片之前传过了，没有重复入库";
+
+/* 剪贴板提示 */
+"clipboard.hint" = "检测到剪贴板图片，要添加吗？";
+"clipboard.add" = "添加";
+"clipboard.dismiss" = "不用了";
+
+/* 已选图片 */
+"image.remove" = "移除这张照片";
+"image.remaining.one" = "还能加 1 张";
+"image.remaining" = "还能加 %1$d 张";
+
+/* 老师的话 */
+"note.label" = "老师的话（选填）";
+"note.placeholder" = "可以粘贴老师的补充说明";
+
+/* 日期 */
+"date.label" = "作业日期";
+"date.picker" = "日期";
+"date.today" = "今天";
+"date.yesterday" = "昨天";
+
+/* 其他 */
+"footer.leaveEarly" = "收到图片后就能离开，不用等识别";
+"root.offlineBanner.hint" = "打开设置检查 NAS 地址";

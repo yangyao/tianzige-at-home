@@ -48,7 +48,12 @@ struct APIClient {
 
         let (data, response) = try await Self.send(request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw IngestError.server(status: (response as? HTTPURLResponse)?.statusCode ?? 0, message: nil)
+            let envelope = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data)
+            throw IngestError.server(
+                status: (response as? HTTPURLResponse)?.statusCode ?? 0,
+                code: envelope?.error.code,
+                message: envelope?.error.message
+            )
         }
         guard let decoded = try? JSONDecoder().decode(HealthResponse.self, from: data) else {
             throw IngestError.malformed
@@ -74,7 +79,11 @@ struct APIClient {
 
         guard (200..<300).contains(http.statusCode) else {
             let envelope = try? JSONDecoder().decode(APIErrorEnvelope.self, from: data)
-            throw IngestError.server(status: http.statusCode, message: envelope?.error.message)
+            throw IngestError.server(
+                status: http.statusCode,
+                code: envelope?.error.code,
+                message: envelope?.error.message
+            )
         }
         guard !data.isEmpty, let decoded = try? JSONDecoder().decode(IngestResponse.self, from: data) else {
             throw IngestError.malformed

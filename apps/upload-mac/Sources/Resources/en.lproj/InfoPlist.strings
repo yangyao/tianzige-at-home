@@ -1,0 +1,8 @@
+/*
+ * Info.plist 本地化（英文）。显示名英文用 Tianzige。
+ */
+
+"CFBundleDisplayName" = "Tianzige";
+"CFBundleName" = "Tianzige";
+"NSHumanReadableCopyright" = "A home tool — local network only.";
+"NSLocalNetworkUsageDescription" = "Needs to reach the NAS at home to send the homework photos.";

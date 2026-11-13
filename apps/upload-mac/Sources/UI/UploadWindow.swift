@@ -33,7 +33,7 @@ struct UploadWindow: View {
                 noteField
                 Spacer(minLength: Space.s3)
                 submitButton
-                Text("收到图片后就能离开，不用等识别")
+                Text(L10n.string("upload.window.leaveEarly"))
                     .font(Fonts.caption)
                     .foregroundStyle(Theme.textSecondary)
                     .padding(.top, Space.s2)
@@ -79,7 +79,7 @@ struct UploadWindow: View {
                 .frame(width: 44, height: 44)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text("家里的田字格")
+                Text(L10n.string("app.name"))
                     .font(Fonts.title)
                     .foregroundStyle(Theme.textPrimary)
                 Text(connectionLabel)
@@ -97,17 +97,17 @@ struct UploadWindow: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .help("设置")
+            .help(L10n.string("settings.title"))
         }
         .padding(.bottom, Space.s5)
     }
 
     private var connectionLabel: String {
         switch store.health {
-        case .ok: return "家里已连接"
-        case .down: return "暂时连不上家里"
-        case .checking: return "正在连接家里…"
-        case .unknown: return "作业上传"
+        case .ok: return L10n.string("upload.connection.ok")
+        case .down: return L10n.string("upload.connection.down")
+        case .checking: return L10n.string("upload.connection.checking")
+        case .unknown: return L10n.string("app.subtitle")
         }
     }
 
@@ -116,12 +116,17 @@ struct UploadWindow: View {
             Divider().overlay(Theme.line)
             if lastAt > 0 {
                 HStack {
-                    Text(lastDuplicate ? "最近一次：图片之前已收到" : "最近一次：收到 \(lastCount) 张")
+                    Text(lastDuplicate
+                         ? L10n.string("upload.receipt.duplicate")
+                         : L10n.count(lastCount,
+                                      one: "upload.receipt.count.one",
+                                      other: "upload.receipt.count"))
                     Spacer()
-                    Text(Date(timeIntervalSince1970: lastAt), style: .time)
+                    // 24 小时制，和菜单栏、协议里的示例一致（docs/12-国际化.md §5）
+                    Text(Self.timeFormatter.string(from: Date(timeIntervalSince1970: lastAt)))
                 }
             } else {
-                Text("传到家里的电视，让孩子自己看作业")
+                Text(L10n.string("upload.receipt.idle"))
             }
         }
         .font(Fonts.caption)
@@ -129,18 +134,26 @@ struct UploadWindow: View {
         .padding(.top, Space.s4)
     }
 
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        formatter.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? .current
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+
     /// 服务不通时的黄条。只在健康检查明确失败后出现，避免打开窗口时闪一下。
     private var connectionBanner: some View {
         HStack(spacing: Space.s2) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 12, weight: .semibold))
-            Text("连不上 NAS，检查地址或网络")
+            Text(L10n.string("error.offline"))
                 .font(Fonts.caption)
             Spacer(minLength: Space.s2)
             Button {
                 WindowManager.shared.showSettingsWindow()
             } label: {
-                Text("去设置")
+                Text(L10n.string("upload.banner.settings"))
                     .font(Fonts.caption.weight(.semibold))
                     .underline()
             }
@@ -174,10 +187,10 @@ struct UploadWindow: View {
                     Image(systemName: "photo.on.rectangle")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Theme.accent)
-                    Text("继续添加作业照片")
+                    Text(L10n.string("upload.dropZone.continue"))
                         .font(Fonts.body.weight(.semibold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text("拖进来或按 ⌘V")
+                    Text(L10n.string("upload.dropZone.continueHint"))
                         .font(Fonts.caption)
                         .foregroundStyle(Theme.textDim)
                 }
@@ -186,13 +199,13 @@ struct UploadWindow: View {
                     Image(systemName: "photo.on.rectangle")
                         .font(.system(size: 30, weight: .light))
                         .foregroundStyle(Theme.textSecondary)
-                    Text("把作业照片拖进来")
+                    Text(L10n.string("upload.title"))
                         .font(Fonts.dropTitle)
                         .foregroundStyle(Theme.textPrimary)
-                    Text("拖进来，或按 ⌘V")
+                    Text(L10n.string("upload.dropZone.hint"))
                         .font(Fonts.caption)
                         .foregroundStyle(Theme.textSecondary)
-                    Text("截图后直接粘贴，也可以点这里选图片")
+                    Text(L10n.string("upload.dropZone.tip"))
                         .font(Fonts.hint)
                         .foregroundStyle(Theme.textDim)
                 }
@@ -206,7 +219,7 @@ struct UploadWindow: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
         .onTapGesture { showImporter = true }
-        .help("选图片，或把图片拖进来")
+        .help(L10n.string("upload.dropZone.help"))
     }
 
     private func hintLine(_ text: String) -> some View {
@@ -260,7 +273,7 @@ struct UploadWindow: View {
             }
             .buttonStyle(.plain)
             .padding(3)
-            .help("拿掉这张")
+            .help(L10n.string("image.remove"))
         }
         .frame(width: 154, height: 96)
         .help("\(image.sourceName) · \(Int(image.pixelSize.width))×\(Int(image.pixelSize.height))")
@@ -270,7 +283,7 @@ struct UploadWindow: View {
 
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("老师的话（选填）")
+            Text(L10n.string("note.label"))
                 .font(Fonts.caption)
                 .foregroundStyle(Theme.textSecondary)
 
@@ -288,7 +301,7 @@ struct UploadWindow: View {
                     .padding(.vertical, 6)
 
                 if store.note.isEmpty {
-                    Text("可以粘贴老师的补充说明")
+                    Text(L10n.string("note.placeholder"))
                         .font(Fonts.body)
                         .foregroundStyle(Theme.textDim)
                         .padding(.leading, 13)
@@ -303,7 +316,7 @@ struct UploadWindow: View {
 
     private var dateRow: some View {
         HStack(spacing: Space.s2) {
-            Text("作业日期")
+            Text(L10n.string("date.label"))
                 .font(Fonts.caption)
                 .foregroundStyle(Theme.textSecondary)
 
@@ -315,7 +328,7 @@ struct UploadWindow: View {
             )
             .labelsHidden()
             .datePickerStyle(.compact)
-            .environment(\.locale, Locale(identifier: "zh_CN"))
+            .environment(\.locale, Locale.current)
             .environment(\.timeZone, TimeZone(identifier: "Asia/Shanghai") ?? .current)
 
             Spacer(minLength: 0)

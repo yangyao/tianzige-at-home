@@ -3,9 +3,15 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>zh-Hans</string>
+	<string>en</string>
+	<!-- 显示名由 Resources/*.lproj/InfoPlist.strings 本地化：en = Tianzige，zh-Hans = 家里的田字格 -->
 	<key>CFBundleDisplayName</key>
-	<string>家里的田字格</string>
+	<string>Tianzige</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -31,11 +37,11 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>要从相册里选作业照片传到家里的 NAS，只读取你选中并确认的那几张。</string>
+	<string>Needs your photo library to send homework photos to the NAS at home. Only the ones you pick are read.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>要直接拍下作业照片传到家里的 NAS，只在你自己按下拍照时使用相机。</string>
+	<string>Needs the camera to send homework photos to the NAS at home. It's only used when you tap the shutter.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>要连上家里局域网里的 NAS，才能把作业照片传上去。</string>
+	<string>Needs to reach the NAS on your home network so the homework photos can be uploaded.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- 只连局域网里的 http 服务，没有公网流量。nas.local 与 192.168.x.x 都必须放行。 -->

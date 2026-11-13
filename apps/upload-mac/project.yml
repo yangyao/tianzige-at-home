@@ -11,6 +11,12 @@ options:
     macOS: "13.0"
   createIntermediateGroups: true
   groupSortPosition: top
+  # 英文是开发语言（也是 fallback）：非中文系统一律落到 en，中文系统走 zh-Hans。
+  developmentLanguage: en
+  knownRegions:
+    - en
+    - Base
+    - zh-Hans
 
 settings:
   base:
@@ -24,7 +30,13 @@ targets:
     type: application
     platform: macOS
     sources:
+      # Resources 单独列出来：en.lproj / zh-Hans.lproj 里的同名文件会被合成
+      # 一个 PBXVariantGroup，buildPhase 固定为 resources。
       - path: Sources
+        excludes:
+          - "Resources"
+      - path: Sources/Resources
+        buildPhase: resources
       - path: Assets.xcassets
     settings:
       base:

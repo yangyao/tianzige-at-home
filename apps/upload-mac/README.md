@@ -61,6 +61,19 @@ xcodebuild -project TianzigeMac.xcodeproj -scheme TianzigeMac -configuration Rel
 设置窗口只有两项：NAS 地址（默认 `http://192.168.2.196:18086`，`@AppStorage` 存 UserDefaults）+「测试连接」（`GET /api/health`）。
 地址允许只填 `192.168.1.8:8080`，会自动补 `http://`。
 
+## 切换语言测试
+
+文案跟随系统：英文系统显示英文，中文系统显示中文，其余语言回退英文（`en` 是开发语言）。
+App 内没有语言切换器。
+
+- **Xcode**：Product → Scheme → Edit Scheme… → Run → Options → App Language 选 `English` 或 `简体中文`，再 ⌘R。
+- **系统**：系统设置 → 通用 → 语言与地区，调整首选语言顺序，退出重开 App。
+- **菜单栏**：菜单项在 App 启动时求值，切语言后必须重启 App 才会变。
+- **验收**：英文下菜单是 `Open upload window…` / `Settings…` / `Exit`，上传窗口日期显示 `Nov 9`；中文下是「打开上传窗口…」「11月9日」。
+
+文案 key 见 `Sources/Resources/*.lproj/Localizable.strings`。**两个语言文件的 key 必须完全一致**，
+少一条时英文环境会直接把 key 原样显示出来。新增文案时两边一起加。
+
 ## 签名与首次打开（自用侧载）
 
 自用不需要公证、不需要 App Store。
@@ -135,8 +148,10 @@ apps/upload-mac/
 ├── ProtocolTests.md            接口请求 / 响应示例与客户端行为对照
 └── Sources/
     ├── TianzigeMacApp.swift    @main、MenuBarExtra、菜单项、AppDelegate（Dock drop / reopen）
+    ├── Resources/              en.lproj / zh-Hans.lproj：Localizable.strings + InfoPlist.strings
     ├── Core/
     │   ├── Theme.swift         tokens.json → 颜色 / 字号 / 间距 / 圆角
+    │   ├── Localization.swift  文案入口 L10n（NSLocalizedString 封装）
     │   ├── Models.swift        IngestResponse / HealthResponse / 错误体 / IngestError
     │   ├── APIClient.swift     multipart 构造、30s 超时、地址归一化
     │   ├── ImageProcessor.swift 2048px / JPEG 0.85 / 白底 / 缩略图

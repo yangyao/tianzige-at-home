@@ -1,0 +1,8 @@
+/*
+ * Info.plist 本地化（简体中文）。key 必须与 en.lproj 完全一致。
+ */
+
+"CFBundleDisplayName" = "家里的田字格";
+"NSPhotoLibraryUsageDescription" = "要从相册里选作业照片传到家里的 NAS，只读取你选中并确认的那几张。";
+"NSCameraUsageDescription" = "要直接拍下作业照片传到家里的 NAS，只在你自己按下拍照时使用相机。";
+"NSLocalNetworkUsageDescription" = "要连上家里局域网里的 NAS，才能把作业照片传上去。";

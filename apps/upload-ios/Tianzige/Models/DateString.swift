@@ -19,11 +19,13 @@ enum DateString {
         return formatter
     }()
 
+    /// 行内展示用：英文 `Nov 9`，中文 `11月9日`。
+    /// 由系统按当前语言给出模板（`MMMd`），不手拼「M月d日」——手拼的英文环境会露馅。
     private static let monthDayFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Locale.current
         formatter.timeZone = timeZone
-        formatter.dateFormat = "M月d日"
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         return formatter
     }()
 
@@ -50,8 +52,8 @@ enum DateString {
         ).day ?? 0
 
         switch days {
-        case 0: return "今天"
-        case 1: return "昨天"
+        case 0: return L10n.string("date.today")
+        case 1: return L10n.string("date.yesterday")
         default: return monthDayFormatter.string(from: date)
         }
     }

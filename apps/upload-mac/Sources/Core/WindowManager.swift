@@ -30,7 +30,7 @@ final class WindowManager: NSObject, NSWindowDelegate {
             let root = UploadWindow()
                 .environmentObject(store)
             uploadWindow = makeWindow(
-                title: "上传作业",
+                title: L10n.string("window.upload.title"),
                 size: NSSize(width: 560, height: 700),
                 rootView: AnyView(root)
             )
@@ -49,7 +49,7 @@ final class WindowManager: NSObject, NSWindowDelegate {
             let root = SettingsView()
                 .environmentObject(store)
             settingsWindow = makeWindow(
-                title: "设置",
+                title: L10n.string("settings.title"),
                 size: NSSize(width: 400, height: 250),
                 rootView: AnyView(root)
             )

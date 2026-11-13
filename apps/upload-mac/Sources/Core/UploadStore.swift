@@ -82,17 +82,17 @@ final class UploadStore: ObservableObject {
     }
 
     var submitTitle: String {
-        if isUploading { return "上传中…" }
-        if preparationCount > 0 { return "正在整理照片…" }
-        if didFail { return "没传上去，点这里重试" }
-        if images.isEmpty { return "上传" }
-        return "上传 \(images.count) 张"
+        if isUploading { return L10n.string("upload.uploading") }
+        if preparationCount > 0 { return L10n.string("upload.compressing") }
+        if didFail { return L10n.string("upload.retry") }
+        if images.isEmpty { return L10n.string("upload.button") }
+        return L10n.count(images.count, one: "upload.button.count.one", other: "upload.button.count")
     }
 
-    /// 日期行右边那句「今天 / 昨天 / 11月10日」
+    /// 日期行右边那句「今天 / 昨天 / Nov 10」
     var dateCaption: String {
-        if Self.shanghaiCalendar.isDateInToday(date) { return "今天" }
-        if Self.shanghaiCalendar.isDateInYesterday(date) { return "昨天" }
+        if Self.shanghaiCalendar.isDateInToday(date) { return L10n.string("date.today") }
+        if Self.shanghaiCalendar.isDateInYesterday(date) { return L10n.string("date.yesterday") }
         return Self.monthDayFormatter.string(from: date)
     }
 
@@ -105,7 +105,7 @@ final class UploadStore: ObservableObject {
 
         let room = Self.maxImages - images.count
         guard room > 0 else {
-            limitMessage = "一次最多传 6 张，先删掉几张再放"
+            limitMessage = L10n.string("error.tooMany")
             return
         }
 
@@ -125,7 +125,7 @@ final class UploadStore: ObservableObject {
             var added = 0
             for item in prepared {
                 guard images.count < Self.maxImages else {
-                    limitMessage = "一次最多传 6 张"
+                    limitMessage = L10n.string("error.tooManyShort")
                     break
                 }
                 guard let thumbnail = NSImage(data: item.thumbnailJPEG) else { continue }
@@ -141,10 +141,12 @@ final class UploadStore: ObservableObject {
             }
 
             if overflow > 0 {
-                limitMessage = "一次最多传 6 张，多出来的 \(overflow) 张没放进来"
+                limitMessage = L10n.format("error.tooManyOverflow", overflow)
             } else if added < accepted.count {
                 let failed = accepted.count - added
-                limitMessage = failed == 1 ? "有 1 张打不开，换一张试试" : "有 \(failed) 张打不开，换一张试试"
+                limitMessage = failed == 1
+                    ? L10n.string("error.unreadable.one")
+                    : L10n.format("error.unreadable.count", failed)
             }
         }
     }
@@ -165,7 +167,7 @@ final class UploadStore: ObservableObject {
                     sources.append(ImageSource(fileURL: url))
                 } else if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier),
                           let data = await Self.loadImageData(from: provider) {
-                    sources.append(ImageSource(data: data, name: "拖进来的图片"))
+                    sources.append(ImageSource(data: data, name: L10n.string("image.source.dropped")))
                 }
             }
             add(sources: sources)
@@ -215,9 +217,12 @@ final class UploadStore: ObservableObject {
         failureMessage = nil
 
         if response.duplicateOf != nil {
-            showToast("这些图片之前传过了，没有重复入库", kind: .info)
+            showToast(L10n.string("upload.duplicate"), kind: .info)
         } else {
-            showToast("收到 \(response.imageCount) 张，处理完电视上就有", kind: .success)
+            let text = L10n.count(response.imageCount,
+                                  one: "upload.success.one",
+                                  other: "upload.success.count")
+            showToast(text, kind: .success)
         }
         recordLastUpload(count: response.imageCount, duplicate: response.duplicateOf != nil)
         // 能传上去说明网络是通的
@@ -325,7 +330,7 @@ final class UploadStore: ObservableObject {
     static let shanghaiCalendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? .current
-        calendar.locale = Locale(identifier: "zh_CN")
+        calendar.locale = Locale.current
         return calendar
     }()
 
@@ -337,11 +342,12 @@ final class UploadStore: ObservableObject {
         return formatter
     }()
 
+    /// 日期行用：英文 `Nov 9`，中文 `11月9日`，模板交给系统按当前语言展开。
     private static let monthDayFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Locale.current
         formatter.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? .current
-        formatter.dateFormat = "M月d日"
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         return formatter
     }()
 }

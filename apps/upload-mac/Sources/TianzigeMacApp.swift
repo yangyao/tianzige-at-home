@@ -23,7 +23,7 @@ struct MenuContent: View {
     @AppStorage(DefaultsKey.lastUploadDuplicate) private var lastDuplicate = false
 
     var body: some View {
-        Button("打开上传窗口…") {
+        Button(L10n.string("menu.openWindow")) {
             WindowManager.shared.showUploadWindow()
         }
 
@@ -31,29 +31,33 @@ struct MenuContent: View {
 
         Divider()
 
-        Button("设置…") {
+        Button(L10n.string("menu.settings")) {
             WindowManager.shared.showSettingsWindow()
         }
 
         Divider()
 
-        Button("退出") {
+        Button(L10n.string("menu.quit")) {
             NSApp.terminate(nil)
         }
     }
 
     private var lastUploadText: String {
-        guard lastCount > 0, lastAt > 0 else { return "上次：还没有上传" }
+        guard lastCount > 0, lastAt > 0 else { return L10n.string("menu.last.none") }
         let time = Self.clockFormatter.string(from: Date(timeIntervalSince1970: lastAt))
         if lastDuplicate {
-            return "上次：之前传过 · \(time)"
+            return L10n.format("menu.last.duplicate", time)
         }
-        return "上次：✓ \(lastCount) 张 · \(time)"
+        if lastCount == 1 {
+            return L10n.format("menu.last.count.one", time)
+        }
+        return L10n.format("menu.last.count", lastCount, time)
     }
 
+    /// 24 小时制，两边一致（docs/12-国际化.md §5）。
     private static let clockFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Locale.current
         formatter.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? .current
         formatter.dateFormat = "HH:mm"
         return formatter
@@ -82,19 +86,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainMenu.addItem(appItem)
         let appMenu = NSMenu()
         appMenu.addItem(
-            withTitle: "关于 家里的田字格",
+            withTitle: L10n.string("menu.about"),
             action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
             keyEquivalent: ""
         )
         appMenu.addItem(.separator())
         appMenu.addItem(
-            withTitle: "隐藏 家里的田字格",
+            withTitle: L10n.string("menu.hide"),
             action: #selector(NSApplication.hide(_:)),
             keyEquivalent: "h"
         )
         appMenu.addItem(.separator())
         appMenu.addItem(
-            withTitle: "退出 家里的田字格",
+            withTitle: L10n.string("menu.quitApp"),
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         )
@@ -102,14 +106,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let editItem = NSMenuItem()
         mainMenu.addItem(editItem)
-        let editMenu = NSMenu(title: "编辑")
-        editMenu.addItem(withTitle: "撤销", action: Selector(("undo:")), keyEquivalent: "z")
-        editMenu.addItem(withTitle: "重做", action: Selector(("redo:")), keyEquivalent: "Z")
+        let editMenu = NSMenu(title: L10n.string("menu.edit"))
+        editMenu.addItem(withTitle: L10n.string("menu.undo"), action: Selector(("undo:")), keyEquivalent: "z")
+        editMenu.addItem(withTitle: L10n.string("menu.redo"), action: Selector(("redo:")), keyEquivalent: "Z")
         editMenu.addItem(.separator())
-        editMenu.addItem(withTitle: "剪切", action: Selector(("cut:")), keyEquivalent: "x")
-        editMenu.addItem(withTitle: "拷贝", action: Selector(("copy:")), keyEquivalent: "c")
-        editMenu.addItem(withTitle: "粘贴", action: Selector(("paste:")), keyEquivalent: "v")
-        editMenu.addItem(withTitle: "全选", action: Selector(("selectAll:")), keyEquivalent: "a")
+        editMenu.addItem(withTitle: L10n.string("menu.cut"), action: Selector(("cut:")), keyEquivalent: "x")
+        editMenu.addItem(withTitle: L10n.string("menu.copy"), action: Selector(("copy:")), keyEquivalent: "c")
+        editMenu.addItem(withTitle: L10n.string("menu.paste"), action: Selector(("paste:")), keyEquivalent: "v")
+        editMenu.addItem(withTitle: L10n.string("menu.selectAll"), action: Selector(("selectAll:")), keyEquivalent: "a")
         editItem.submenu = editMenu
 
         return mainMenu

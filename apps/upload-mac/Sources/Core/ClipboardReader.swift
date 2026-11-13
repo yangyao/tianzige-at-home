@@ -18,7 +18,7 @@ enum ClipboardReader {
             return images.compactMap { image in
                 // 在主线程序列化成 TIFF，后台线程只碰 Data。
                 guard let tiff = image.tiffRepresentation else { return nil }
-                return ImageSource(data: tiff, name: "剪贴板图片")
+                return ImageSource(data: tiff, name: L10n.string("image.source.clipboard"))
             }
         }
         return []

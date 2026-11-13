@@ -28,7 +28,7 @@ struct MenuBarIcon: View {
             context.stroke(vertical, with: .color(Color.primary), lineWidth: lineWidth)
         }
         .frame(width: 17, height: 17)
-        .accessibilityLabel("家里的田字格")
+        .accessibilityLabel(L10n.string("app.name"))
     }
 }
 

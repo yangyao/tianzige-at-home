@@ -33,11 +33,25 @@ App 内点右上角 ⚙️ → 「NAS 地址」填家里 NAS 的局域网地址�
 
 ```
 Tianzige/
-├── App/            入口 + Info.plist
+├── App/            入口 + Info.plist + Localization（文案入口）
 ├── Models/         IngestResponse / HealthResponse / AppSettings / DateString
 ├── Networking/     APIClient（ingest + health）/ MultipartBody / ImageCompressor
+├── Resources/      en.lproj / zh-Hans.lproj：Localizable.strings + InfoPlist.strings
 └── Views/          RootView（单屏）/ SettingsView / 选图器 / Theme
 ```
+
+## 切换语言测试
+
+文案跟随系统：英文系统显示英文，中文系统显示中文，其余语言回退英文（`en` 是开发语言）。
+
+- **Xcode**：Product → Scheme → Edit Scheme… → Run → Options → App Language 选 `English` 或 `简体中文`，再 ⌘R。
+  这一项只影响本次运行，不用改系统语言。
+- **模拟器 / 真机**：设置 → 通用 → 语言与地区 → 把首选语言顺序调一下，重启 App。
+- **验收**：英文下 设置页标题是 `Settings`、日期显示 `Nov 9`；中文下是 `设置` / `11月9日`。
+  显示名在英文下是 `Tianzige`，中文下是 `家里的田字格`（来自 `InfoPlist.strings`，改完要重装 App 才生效）。
+
+文案 key 见 `Tianzige/Resources/*.lproj/Localizable.strings`。**两个语言文件的 key 必须完全一致**，
+少一条时英文环境会直接把 key 原样显示出来。新增文案时两边一起加。
 
 ## 行为约定（与 docs/05-协议.md、design/upload-ui.md 对齐）
 

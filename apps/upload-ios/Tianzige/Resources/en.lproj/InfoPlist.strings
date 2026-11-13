@@ -1,0 +1,9 @@
+/*
+ * Info.plist 本地化（英文）。显示名英文用 Tianzige。
+ * 只放权限说明和显示名这类系统弹窗文案，界面文案在 Localizable.strings。
+ */
+
+"CFBundleDisplayName" = "Tianzige";
+"NSPhotoLibraryUsageDescription" = "Needs your photo library to send homework photos to the NAS at home. Only the ones you pick are read.";
+"NSCameraUsageDescription" = "Needs the camera to send homework photos to the NAS at home. It's only used when you tap the shutter.";
+"NSLocalNetworkUsageDescription" = "Needs to reach the NAS on your home network so the homework photos can be uploaded.";

@@ -51,7 +51,7 @@ struct HealthResponse: Decodable, Equatable {
 }
 
 /// 统一错误体：`{ "error": { "code": "...", "message": "..." } }`
-/// message 是服务端给好的中文句子，客户端直接展示，不自己拼。
+/// `code` 用来查本地文案；`message` 是服务端那句话，码不认识时才兜底展示。
 struct APIErrorResponse: Decodable {
     struct Body: Decodable {
         let code: String

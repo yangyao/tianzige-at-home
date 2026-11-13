@@ -31,11 +31,11 @@ struct SettingsView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle("设置")
+            .navigationTitle(L10n.string("settings.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button(L10n.string("settings.done")) {
                         addressFocused = false
                         dismiss()
                     }
@@ -51,7 +51,7 @@ struct SettingsView: View {
 
     private var addressSection: some View {
         VStack(alignment: .leading, spacing: Theme.Space.s2) {
-            Text("NAS 地址")
+            Text(L10n.string("settings.nasAddress"))
                 .font(Theme.Fonts.caption)
                 .foregroundColor(Theme.textSecondary)
 
@@ -78,7 +78,7 @@ struct SettingsView: View {
                     testState = .idle
                 }
 
-            Text("已预设家里的 NAS 地址，需要时可修改。")
+            Text(L10n.string("settings.presetHint"))
                 .font(Theme.Fonts.min)
                 .foregroundColor(Theme.textDim)
         }
@@ -96,7 +96,7 @@ struct SettingsView: View {
                         ProgressView()
                             .tint(Theme.accentInk)
                     }
-                    Text("测试连接")
+                    Text(L10n.string("settings.testConnection"))
                         .font(Theme.Fonts.bodySemibold)
                 }
                 .foregroundColor(Theme.accentInk)
@@ -113,12 +113,12 @@ struct SettingsView: View {
             case .idle:
                 EmptyView()
             case .testing:
-                Text("正在连接…")
+                Text(L10n.string("settings.testing"))
                     .font(Theme.Fonts.caption)
                     .foregroundColor(Theme.textDim)
             case let .success(version):
                 resultLine(
-                    text: "已连接 · 服务端版本 \(version)",
+                    text: L10n.format("settings.connected", version),
                     color: Theme.stateOK,
                     systemImage: "checkmark.circle.fill"
                 )
@@ -147,12 +147,12 @@ struct SettingsView: View {
 
     private var hintSection: some View {
         VStack(alignment: .leading, spacing: Theme.Space.s2) {
-            Text("这个 App 只负责把照片传上去。传完就可以切走，电视上自己会出来，不用等。")
+            Text(L10n.string("settings.hint.uploadOnly"))
                 .font(Theme.Fonts.caption)
                 .foregroundColor(Theme.textDim)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("只在家里局域网里用，照片不会出公网。")
+            Text(L10n.string("settings.hint.lanOnly"))
                 .font(Theme.Fonts.min)
                 .foregroundColor(Theme.textDim)
         }
@@ -169,15 +169,15 @@ struct SettingsView: View {
         do {
             let health = try await APIClient(baseURL: settings.baseURL).health()
             guard health.ok else {
-                testState = .failure(message: "连不上 NAS，检查地址或网络")
+                testState = .failure(message: L10n.string("error.offline"))
                 return
             }
             testState = .success(version: health.version)
         } catch let error as APIError {
-            let message = error.isConnectionProblem ? "连不上 NAS，检查地址或网络" : error.userMessage
+            let message = error.isConnectionProblem ? L10n.string("error.offline") : error.userMessage
             testState = .failure(message: message)
         } catch {
-            testState = .failure(message: "连不上 NAS，检查地址或网络")
+            testState = .failure(message: L10n.string("error.offline"))
         }
     }
 }

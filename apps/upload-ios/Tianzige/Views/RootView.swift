@@ -101,10 +101,10 @@ struct RootView: View {
                 .frame(width: 36, height: 36)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text("家里的田字格")
+                Text(L10n.string("app.name"))
                     .font(Theme.Fonts.title)
                     .foregroundColor(Theme.textPrimary)
-                Text("作业上传")
+                Text(L10n.string("app.subtitle"))
                     .font(Theme.Fonts.caption)
                     .foregroundColor(Theme.textDim)
             }
@@ -121,7 +121,7 @@ struct RootView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())
-            .accessibilityLabel("设置")
+            .accessibilityLabel(L10n.string("settings.title"))
         }
         .padding(.horizontal, Theme.Space.s4)
         .padding(.top, Theme.Space.s3)
@@ -137,7 +137,7 @@ struct RootView: View {
             HStack(spacing: Theme.Space.s2) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 13, weight: .semibold))
-                Text("连不上 NAS，检查地址或网络")
+                Text(L10n.string("error.offline"))
                     .font(Theme.Fonts.caption)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
@@ -150,7 +150,7 @@ struct RootView: View {
             .background(Theme.stateWarn.opacity(0.14))
         }
         .buttonStyle(.plain)
-        .accessibilityHint("打开设置检查 NAS 地址")
+        .accessibilityHint(L10n.string("root.offlineBanner.hint"))
     }
 
     // MARK: - 主体
@@ -184,16 +184,16 @@ struct RootView: View {
     private var uploadArea: some View {
         VStack(alignment: .leading, spacing: Theme.Space.s5) {
             VStack(alignment: .leading, spacing: Theme.Space.s2) {
-                Text("把作业照片放进来")
+                Text(L10n.string("upload.title"))
                     .font(Theme.Fonts.sectionTitle)
                     .foregroundColor(Theme.textPrimary)
-                Text("从相册选，或直接拍")
+                Text(L10n.string("upload.subtitle"))
                     .font(Theme.Fonts.caption)
                     .foregroundColor(Theme.textDim)
             }
 
             HStack(spacing: Theme.Space.s3) {
-                sourceButton(title: "从相册选", systemImage: "photo.on.rectangle") {
+                sourceButton(title: L10n.string("upload.fromLibrary"), systemImage: "photo.on.rectangle") {
                     guard viewModel.remainingSlots > 0 else {
                         viewModel.inlineMessage = viewModel.tooManyImagesMessage
                         return
@@ -201,13 +201,13 @@ struct RootView: View {
                     showsPhotoPicker = true
                 }
 
-                sourceButton(title: "拍照", systemImage: "camera.fill") {
+                sourceButton(title: L10n.string("upload.takePhoto"), systemImage: "camera.fill") {
                     guard viewModel.remainingSlots > 0 else {
                         viewModel.inlineMessage = viewModel.tooManyImagesMessage
                         return
                     }
                     guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-                        viewModel.inlineMessage = "这台设备没有可用的相机"
+                        viewModel.inlineMessage = L10n.string("error.noCamera")
                         return
                     }
                     showsCamera = true
@@ -219,7 +219,7 @@ struct RootView: View {
                 HStack(spacing: Theme.Space.s2) {
                     ProgressView()
                         .tint(Theme.textSecondary)
-                    Text("正在整理照片…")
+                    Text(L10n.string("upload.compressing"))
                         .font(Theme.Fonts.caption)
                         .foregroundColor(Theme.textDim)
                 }
@@ -254,14 +254,14 @@ struct RootView: View {
                 .font(.system(size: 16, weight: .regular))
                 .foregroundColor(Theme.textSecondary)
 
-            Text("检测到剪贴板图片，要添加吗？")
+            Text(L10n.string("clipboard.hint"))
                 .font(Theme.Fonts.caption)
                 .foregroundColor(Theme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
 
-            Button("添加") {
+            Button(L10n.string("clipboard.add")) {
                 Task { await viewModel.addClipboardImage() }
             }
             .font(Theme.Fonts.bodySemibold)
@@ -277,7 +277,7 @@ struct RootView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("不用了")
+            .accessibilityLabel(L10n.string("clipboard.dismiss"))
         }
         .padding(.horizontal, Theme.Space.s3)
         .padding(.vertical, Theme.Space.s2)
@@ -328,7 +328,7 @@ struct RootView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(4)
-                .accessibilityLabel("移除这张照片")
+                .accessibilityLabel(L10n.string("image.remove"))
             }
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous)
@@ -343,7 +343,9 @@ struct RootView: View {
             VStack(spacing: 2) {
                 Image(systemName: "plus")
                     .font(.system(size: 18, weight: .medium))
-                Text("还能加 \(viewModel.remainingSlots) 张")
+                Text(L10n.count(viewModel.remainingSlots,
+                                one: "image.remaining.one",
+                                other: "image.remaining"))
                     .font(Theme.Fonts.min)
             }
             .foregroundColor(Theme.textDim)
@@ -362,12 +364,12 @@ struct RootView: View {
 
     private var noteField: some View {
         VStack(alignment: .leading, spacing: Theme.Space.s2) {
-            Text("老师的话（选填）")
+            Text(L10n.string("note.label"))
                 .font(Theme.Fonts.caption)
                 .foregroundColor(Theme.textSecondary)
 
             TextField(
-                "可以粘贴老师的补充说明",
+                L10n.string("note.placeholder"),
                 text: Binding(
                     get: { viewModel.note },
                     set: { viewModel.note = String($0.prefix(UploadViewModel.maxNoteLength)) }
@@ -397,7 +399,7 @@ struct RootView: View {
                 }
             } label: {
                 HStack(spacing: Theme.Space.s3) {
-                    Text("作业日期")
+                    Text(L10n.string("date.label"))
                         .font(Theme.Fonts.body)
                         .foregroundColor(Theme.textSecondary)
                         .lineLimit(1)
@@ -428,7 +430,7 @@ struct RootView: View {
 
             if viewModel.isDatePickerExpanded {
                 DatePicker(
-                    "日期",
+                    L10n.string("date.picker"),
                     selection: $viewModel.selectedDate,
                     in: viewModel.dateRange,
                     displayedComponents: .date
@@ -480,7 +482,7 @@ struct RootView: View {
             .padding(.top, Theme.Space.s3)
             .padding(.bottom, Theme.Space.s2)
 
-            Text("收到图片后就能离开，不用等识别")
+            Text(L10n.string("footer.leaveEarly"))
                 .font(Theme.Fonts.caption)
                 .foregroundColor(Theme.textSecondary)
                 .padding(.bottom, Theme.Space.s3)
@@ -491,11 +493,14 @@ struct RootView: View {
     private var buttonTitle: String {
         switch viewModel.phase {
         case .uploading:
-            return "上传中…"
+            return L10n.string("upload.uploading")
         case .failed:
-            return "没传上去，点这里重试"
+            return L10n.string("upload.retry")
         case .idle:
-            return viewModel.images.isEmpty ? "上传照片" : "上传 \(viewModel.images.count) 张"
+            guard !viewModel.images.isEmpty else { return L10n.string("upload.button") }
+            return L10n.count(viewModel.images.count,
+                              one: "upload.button.count.one",
+                              other: "upload.button.count")
         }
     }
 

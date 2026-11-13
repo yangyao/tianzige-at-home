@@ -8,7 +8,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.s3) {
-            Text("NAS 地址")
+            Text(L10n.string("settings.nasAddress"))
                 .font(Fonts.caption)
                 .foregroundStyle(Theme.textSecondary)
 
@@ -32,7 +32,9 @@ struct SettingsView: View {
                 Button {
                     store.refreshHealth(force: true)
                 } label: {
-                    Text(store.isCheckingHealth ? "正在连接…" : "测试连接")
+                    Text(store.isCheckingHealth
+                         ? L10n.string("settings.testing")
+                         : L10n.string("settings.testConnection"))
                         .font(Fonts.caption.weight(.semibold))
                         .foregroundStyle(Theme.textPrimary)
                         .padding(.horizontal, 12)
@@ -49,7 +51,7 @@ struct SettingsView: View {
                     .font(Fonts.caption)
             }
 
-            Text("已预设家里的 NAS 地址，需要时可修改。")
+            Text(L10n.string("settings.presetHint"))
                 .font(Fonts.hint)
                 .foregroundStyle(Theme.textDim)
                 .fixedSize(horizontal: false, vertical: true)
@@ -58,7 +60,7 @@ struct SettingsView: View {
 
             HStack {
                 Spacer()
-                Button("完成") {
+                Button(L10n.string("settings.done")) {
                     WindowManager.shared.closeSettingsWindow()
                 }
                 .buttonStyle(.plain)
@@ -76,16 +78,16 @@ struct SettingsView: View {
     private var statusLabel: some View {
         switch store.health {
         case .unknown:
-            Text("还没连过")
+            Text(L10n.string("settings.status.unknown"))
                 .foregroundStyle(Theme.textDim)
         case .checking:
-            Text("正在连接…")
+            Text(L10n.string("settings.testing"))
                 .foregroundStyle(Theme.textSecondary)
         case .ok:
-            Text("连上了，NAS 正常")
+            Text(L10n.string("settings.status.ok"))
                 .foregroundStyle(Theme.ok)
         case .down:
-            Text("连不上，检查地址或网络")
+            Text(L10n.string("settings.status.down"))
                 .foregroundStyle(Theme.error)
         }
     }

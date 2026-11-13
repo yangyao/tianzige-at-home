@@ -47,7 +47,7 @@ final class UploadViewModel: ObservableObject {
     }
 
     var tooManyImagesMessage: String {
-        "一次最多 \(Self.maxImages) 张，先删掉几张再选"
+        L10n.format("error.tooMany", Self.maxImages)
     }
 
     // MARK: - 选图
@@ -69,14 +69,14 @@ final class UploadViewModel: ObservableObject {
         isCompressing = false
 
         guard !compressed.isEmpty else {
-            inlineMessage = "这几张读不出来，换几张试试"
+            inlineMessage = L10n.string("error.unreadable")
             return
         }
 
         images.append(contentsOf: compressed.map { self.makeSelectedImage($0) })
 
         if dataList.count > slots {
-            inlineMessage = "一次最多 \(Self.maxImages) 张，多的这次没放进来"
+            inlineMessage = L10n.format("error.tooManyOverflow", Self.maxImages)
         }
         refreshClipboardHint()
     }
@@ -128,7 +128,7 @@ final class UploadViewModel: ObservableObject {
             showToast(ToastMessage(text: error.userMessage, kind: .error))
         } catch {
             phase = .failed
-            showToast(ToastMessage(text: "这次没传上去，点一下再试", kind: .error))
+            showToast(ToastMessage(text: L10n.string("error.uploadFailed"), kind: .error))
         }
     }
 
@@ -143,9 +143,12 @@ final class UploadViewModel: ObservableObject {
         isServerReachable = true
 
         if response.duplicateOf != nil {
-            showToast(ToastMessage(text: "这些图片之前传过了，没有重复入库", kind: .info))
+            showToast(ToastMessage(text: L10n.string("upload.duplicate"), kind: .info))
         } else {
-            showToast(ToastMessage(text: "收到 \(response.imageCount) 张，处理完电视上就有", kind: .success))
+            let text = L10n.count(response.imageCount,
+                                  one: "upload.success.one",
+                                  other: "upload.success.count")
+            showToast(ToastMessage(text: text, kind: .success))
         }
     }
 
@@ -193,7 +196,7 @@ final class UploadViewModel: ObservableObject {
 
         guard let image = UIPasteboard.general.image,
               let data = image.jpegData(compressionQuality: 1.0) else {
-            inlineMessage = "剪贴板里没有能用的图片"
+            inlineMessage = L10n.string("error.clipboardEmpty")
             return
         }
 

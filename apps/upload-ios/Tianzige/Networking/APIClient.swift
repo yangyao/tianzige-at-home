@@ -91,7 +91,7 @@ struct APIClient {
         }
     }
 
-    /// 202 / 200 之外的响应，优先取服务端给的中文 message。
+    /// 202 / 200 之外的响应，取服务端错误体里的 code（文案由 APIError 按 code 本地化）。
     private static func ensureSuccess(data: Data, response: HTTPURLResponse) throws {
         guard (200..<300).contains(response.statusCode) else {
             if let payload = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {

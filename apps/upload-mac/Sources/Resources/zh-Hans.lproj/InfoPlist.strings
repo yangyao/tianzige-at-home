@@ -1,0 +1,8 @@
+/*
+ * Info.plist 本地化（简体中文）。key 必须与 en.lproj 完全一致。
+ */
+
+"CFBundleDisplayName" = "家里的田字格";
+"CFBundleName" = "家里的田字格";
+"NSHumanReadableCopyright" = "自用工具，只在局域网里跑。";
+"NSLocalNetworkUsageDescription" = "需要连到家里的 NAS，把作业照片送过去。";

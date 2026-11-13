@@ -1,0 +1,107 @@
+/*
+ * upload-mac 界面文案（英文，开发语言 / 回退语言）。
+ * 术语与语气见 docs/12-国际化.md；key 为语义名，不用中文当 key。
+ * 带参数的一律用 %1$d / %1$@。
+ */
+
+/* 应用名 */
+"app.name" = "Tianzige";
+"app.subtitle" = "Homework";
+
+/* 设置窗口 */
+"settings.title" = "Settings";
+"settings.done" = "Done";
+"settings.nasAddress" = "Server address";
+"settings.presetHint" = "The home NAS address is preset — change it if needed.";
+"settings.testConnection" = "Test connection";
+"settings.testing" = "Connecting…";
+"settings.status.unknown" = "Not connected yet";
+"settings.status.ok" = "Connected — the NAS is fine";
+"settings.status.down" = "Can't reach it — check the address or network";
+
+/* 错误文案：优先按服务端 error.code 映射，message 只作兜底 */
+"error.badRequest" = "Something's wrong with the request";
+"error.invalidDate" = "That date doesn't look right";
+"error.tooManyFiles" = "Up to 6 photos at a time";
+"error.fileTooLarge" = "Each photo must be under 20 MB";
+"error.unsupportedType" = "Only jpg, png, heic or webp";
+"error.notFound" = "Not found";
+"error.ocrFailed" = "Couldn't read this one";
+"error.parseFailed" = "Couldn't sort out the homework";
+"error.llmUnavailable" = "The AI service isn't available";
+"error.internal" = "Something went wrong on the server";
+"error.timeout" = "Took too long — nothing uploaded. Click to retry";
+"error.uploadFailed" = "Couldn't upload — tap to retry";
+"error.badAddress" = "That address doesn't look right — fix it in Settings";
+"error.offline" = "Can't reach the NAS — check the address or network";
+"error.tooMany" = "Up to 6 photos — remove a few first";
+"error.tooManyShort" = "Up to 6 photos";
+"error.tooManyOverflow" = "Up to 6 photos — %1$d weren't added";
+"error.unreadable.one" = "One photo wouldn't open — try another";
+"error.unreadable.count" = "%1$d photos wouldn't open — try another";
+
+/* 上传窗口 */
+"upload.title" = "Drop the homework photos here";
+"upload.dropZone.hint" = "Drop them in, or press ⌘V";
+"upload.dropZone.tip" = "Paste a screenshot, or click here to pick photos";
+"upload.dropZone.help" = "Pick photos, or drag them in";
+"upload.dropZone.continue" = "Add more homework photos";
+"upload.dropZone.continueHint" = "Drop them in or press ⌘V";
+"upload.window.leaveEarly" = "You can leave once it's sent — no need to wait";
+"upload.uploading" = "Uploading…";
+"upload.compressing" = "Getting photos ready…";
+"upload.retry" = "Couldn't upload — tap to retry";
+"upload.button" = "Upload";
+"upload.button.count.one" = "Upload 1 photo";
+"upload.button.count" = "Upload %1$d photos";
+"upload.success.one" = "Got 1 photo. It'll be on the TV shortly.";
+"upload.success.count" = "Got %1$d photos. They'll be on the TV shortly.";
+"upload.duplicate" = "These were uploaded before — nothing new added";
+
+/* 连接状态 */
+"upload.connection.ok" = "Connected to home";
+"upload.connection.down" = "Can't reach home right now";
+"upload.connection.checking" = "Connecting to home…";
+"upload.banner.settings" = "Open Settings";
+
+/* 上次回执 */
+"upload.receipt.duplicate" = "Last time: already received";
+"upload.receipt.count.one" = "Last time: 1 photo";
+"upload.receipt.count" = "Last time: %1$d photos";
+"upload.receipt.idle" = "Goes straight to the TV at home, so your kid can see the homework";
+
+/* 已选图片 */
+"image.remove" = "Remove this one";
+"image.source.dropped" = "Dropped image";
+"image.source.clipboard" = "Clipboard image";
+
+/* 老师的话 */
+"note.label" = "Note from the teacher (optional)";
+"note.placeholder" = "Paste the teacher's note here";
+
+/* 日期 */
+"date.label" = "Homework date";
+"date.today" = "Today";
+"date.yesterday" = "Yesterday";
+
+/* 菜单栏 */
+"menu.openWindow" = "Open upload window…";
+"menu.settings" = "Settings…";
+"menu.quit" = "Quit";
+"menu.last.none" = "Last: nothing yet";
+"menu.last.duplicate" = "Last: already uploaded · %1$@";
+"menu.last.count.one" = "Last: ✓ 1 photo · %1$@";
+"menu.last.count" = "Last: ✓ %1$d photos · %1$@";
+"menu.about" = "About Tianzige";
+"menu.hide" = "Hide Tianzige";
+"menu.quitApp" = "Quit Tianzige";
+"menu.edit" = "Edit";
+"menu.undo" = "Undo";
+"menu.redo" = "Redo";
+"menu.cut" = "Cut";
+"menu.copy" = "Copy";
+"menu.paste" = "Paste";
+"menu.selectAll" = "Select All";
+
+/* 窗口标题 */
+"window.upload.title" = "Upload homework";

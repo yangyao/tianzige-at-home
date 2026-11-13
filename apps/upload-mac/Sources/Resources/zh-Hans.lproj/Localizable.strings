@@ -1,0 +1,105 @@
+/*
+ * upload-mac 界面文案（简体中文）。key 必须与 en.lproj 完全一致。
+ */
+
+/* 应用名 */
+"app.name" = "家里的田字格";
+"app.subtitle" = "作业上传";
+
+/* 设置窗口 */
+"settings.title" = "设置";
+"settings.done" = "完成";
+"settings.nasAddress" = "NAS 地址";
+"settings.presetHint" = "已预设家里的 NAS 地址，需要时可修改。";
+"settings.testConnection" = "测试连接";
+"settings.testing" = "正在连接…";
+"settings.status.unknown" = "还没连过";
+"settings.status.ok" = "连上了，NAS 正常";
+"settings.status.down" = "连不上，检查地址或网络";
+
+/* 错误文案：优先按服务端 error.code 映射，message 只作兜底 */
+"error.badRequest" = "请求有问题";
+"error.invalidDate" = "日期格式不对";
+"error.tooManyFiles" = "一次最多 6 张";
+"error.fileTooLarge" = "单张不能超过 20MB";
+"error.unsupportedType" = "只支持 jpg/png/heic/webp";
+"error.notFound" = "找不到这个记录";
+"error.ocrFailed" = "这次没识别出来";
+"error.parseFailed" = "整理作业时出错了";
+"error.llmUnavailable" = "AI 服务暂时不可用";
+"error.internal" = "服务出了点问题";
+"error.timeout" = "等太久了，没传上去，点这里重试";
+"error.uploadFailed" = "这次没传上去，点这里重试";
+"error.badAddress" = "地址填得不对，去设置里改一下";
+"error.offline" = "连不上 NAS，检查地址或网络";
+"error.tooMany" = "一次最多传 6 张，先删掉几张再放";
+"error.tooManyShort" = "一次最多传 6 张";
+"error.tooManyOverflow" = "一次最多传 6 张，多出来的 %1$d 张没放进来";
+"error.unreadable.one" = "有 1 张打不开，换一张试试";
+"error.unreadable.count" = "有 %1$d 张打不开，换一张试试";
+
+/* 上传窗口 */
+"upload.title" = "把作业照片拖进来";
+"upload.dropZone.hint" = "拖进来，或按 ⌘V";
+"upload.dropZone.tip" = "截图后直接粘贴，也可以点这里选图片";
+"upload.dropZone.help" = "选图片，或把图片拖进来";
+"upload.dropZone.continue" = "继续添加作业照片";
+"upload.dropZone.continueHint" = "拖进来或按 ⌘V";
+"upload.window.leaveEarly" = "收到图片后就能离开，不用等识别";
+"upload.uploading" = "上传中…";
+"upload.compressing" = "正在整理照片…";
+"upload.retry" = "没传上去，点这里重试";
+"upload.button" = "上传";
+"upload.button.count.one" = "上传 1 张";
+"upload.button.count" = "上传 %1$d 张";
+"upload.success.one" = "收到 1 张，处理完电视上就有";
+"upload.success.count" = "收到 %1$d 张，处理完电视上就有";
+"upload.duplicate" = "这些图片之前传过了，没有重复入库";
+
+/* 连接状态 */
+"upload.connection.ok" = "家里已连接";
+"upload.connection.down" = "暂时连不上家里";
+"upload.connection.checking" = "正在连接家里…";
+"upload.banner.settings" = "去设置";
+
+/* 上次回执 */
+"upload.receipt.duplicate" = "最近一次：图片之前已收到";
+"upload.receipt.count.one" = "最近一次：收到 1 张";
+"upload.receipt.count" = "最近一次：收到 %1$d 张";
+"upload.receipt.idle" = "传到家里的电视，让孩子自己看作业";
+
+/* 已选图片 */
+"image.remove" = "拿掉这张";
+"image.source.dropped" = "拖进来的图片";
+"image.source.clipboard" = "剪贴板图片";
+
+/* 老师的话 */
+"note.label" = "老师的话（选填）";
+"note.placeholder" = "可以粘贴老师的补充说明";
+
+/* 日期 */
+"date.label" = "作业日期";
+"date.today" = "今天";
+"date.yesterday" = "昨天";
+
+/* 菜单栏 */
+"menu.openWindow" = "打开上传窗口…";
+"menu.settings" = "设置…";
+"menu.quit" = "退出";
+"menu.last.none" = "上次：还没有上传";
+"menu.last.duplicate" = "上次：之前传过 · %1$@";
+"menu.last.count.one" = "上次：✓ 1 张 · %1$@";
+"menu.last.count" = "上次：✓ %1$d 张 · %1$@";
+"menu.about" = "关于 家里的田字格";
+"menu.hide" = "隐藏 家里的田字格";
+"menu.quitApp" = "退出 家里的田字格";
+"menu.edit" = "编辑";
+"menu.undo" = "撤销";
+"menu.redo" = "重做";
+"menu.cut" = "剪切";
+"menu.copy" = "拷贝";
+"menu.paste" = "粘贴";
+"menu.selectAll" = "全选";
+
+/* 窗口标题 */
+"window.upload.title" = "上传作业";
