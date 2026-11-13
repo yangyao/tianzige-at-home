@@ -180,6 +180,17 @@
     font-family:system-ui,sans-serif;
   }
   #demoBadge.on { display:block; }
+
+  /* ---------------- 语言切换 ---------------- */
+  #langToggle {
+    position:fixed; right:14px; bottom:10px; z-index:95;
+    display:flex; align-items:center; gap:4px;
+    background:none; border:0; color:var(--dim); font-family:system-ui,sans-serif;
+    font-size:13px; padding:6px; cursor:pointer; opacity:.7;
+  }
+  #langToggle .sep { opacity:.45; }
+  #langToggle:hover { opacity:1; }
+  #langToggle .on { color:var(--text2); font-weight:700; }
 </style>
 </head>
 <body>
@@ -192,14 +203,14 @@
       <div class="sub" id="subDate"></div>
       <div class="right">
         <div class="chip rel" id="relChip" style="display:none"></div>
-        <div class="chip" id="syncChip">正在读取…</div>
+        <div class="chip" id="syncChip" data-i18n="tv.sync.reading">正在读取…</div>
       </div>
     </div>
 
     <div class="week">
-      <div class="nav" id="prevWeek" title="上一周">‹</div>
+      <div class="nav" id="prevWeek" title="上一周" data-i18n-title="nav.prev">‹</div>
       <div class="days" id="days"></div>
-      <div class="nav" id="nextWeek" title="下一周">›</div>
+      <div class="nav" id="nextWeek" title="下一周" data-i18n-title="nav.next">›</div>
     </div>
 
     <div class="content">
@@ -213,71 +224,183 @@
     </div>
 
     <div class="foot">
-      <div class="k"><span class="cap">←</span><span class="cap">→</span> 换日期</div>
-      <div class="k"><span class="cap">↑</span><span class="cap">↓</span> <span id="udHint">换科目</span></div>
-      <div class="k"><span class="cap">OK</span> 看大图</div>
-      <div class="k"><span class="cap">返回</span> 退出</div>
+      <div class="k"><span class="cap">←</span><span class="cap">→</span> <span data-i18n="foot.date">换日期</span></div>
+      <div class="k"><span class="cap">↑</span><span class="cap">↓</span> <span id="udHint" data-i18n="foot.subject">换科目</span></div>
+      <div class="k"><span class="cap">OK</span> <span data-i18n="foot.view">看大图</span></div>
+      <div class="k"><span class="cap" data-i18n="foot.back">返回</span> <span data-i18n="foot.exit">退出</span></div>
     </div>
 
     <div class="viewer" id="viewer">
       <div class="frame">
-        <img id="vimg" alt="作业原图">
-        <div class="vph" id="vph"><span>这张图暂时打不开</span><span style="font-size:22px">可以先看文字</span></div>
+        <img id="vimg" alt="作业原图" data-i18n-alt="photo.alt">
+        <div class="vph" id="vph"><span data-i18n="viewer.err">这张图暂时打不开</span><span style="font-size:22px" data-i18n="viewer.errsub">可以先看文字</span></div>
       </div>
       <div class="bar">
-        <span><span class="k">↑ ↓</span> 滚动</span>
-        <span><span class="k">Esc</span> 退出</span>
-        <span style="color:#6F7B88">原图全屏 · 以图为准</span>
+        <span><span class="k">↑ ↓</span> <span data-i18n="viewer.scroll">滚动</span></span>
+        <span><span class="k">Esc</span> <span data-i18n="foot.exit">退出</span></span>
+        <span style="color:#6F7B88" data-i18n="viewer.mode">原图全屏 · 以图为准</span>
       </div>
     </div>
 
   </div>
 </div>
 
-<div id="demoBadge">演示数据</div>
+<button id="langToggle" type="button" aria-label="切换语言 / Switch language"><span data-lang="zh">中文</span><span class="sep">/</span><span data-lang="en">EN</span></button>
+<div id="demoBadge" data-i18n="demo.badge">演示数据</div>
 
 <script>
 (function () {
   'use strict';
 
-  var BASE_KEY = 'tzg.base';
-  var base = '';
-  try { base = localStorage.getItem(BASE_KEY) || ''; } catch (e) { base = ''; }
-  base = String(base).trim().replace(/\/+$/, '');
-
-  var S = {
-    mock: /[?&]mock=1/.test(location.search),
-    mockAuto: false,
-    today: null,
-    sel: null,
-    weekStart: null,
-    day: null,
-    days: [],
-    subjIdx: 0,
-    imgIdx: 0,
-    stamp: null,
-    offline: false,
-    noData: false,
-    viewer: false,
-    vy: 0,
-    imgTouched: false   // 按过 ↑↓ 之后才在网格里标出「当前这张」
+  /* ================= 文案 ================= */
+  var I18N = {
+    zh: {
+      'page.title': '今天的作业 · 家里的田字格',
+      'demo.badge': '演示数据',
+      'nav.prev': '上一周',
+      'nav.next': '下一周',
+      'foot.date': '换日期',
+      'foot.subject': '换科目',
+      'foot.subject.pending': '换图片',
+      'foot.view': '看大图',
+      'foot.back': '返回',
+      'foot.exit': '退出',
+      'photo.alt': '作业原图',
+      'viewer.err': '这张图暂时打不开',
+      'viewer.errsub': '可以先看文字',
+      'viewer.scroll': '滚动',
+      'viewer.mode': '原图全屏 · 以图为准',
+      'tv.title.today': '今天的作业',
+      'tv.title.yesterday': '昨天的作业',
+      'tv.title.other': '{d}的作业',
+      'tv.empty.today': '今天还没有作业',
+      'tv.empty.day': '这天还没有作业',
+      'tv.empty.sub': '老师发出来之后，这里会自己出现',
+      'tv.nas.title': '连不上 NAS',
+      'tv.nas.sub': '检查一下电视和 NAS 是不是在同一个 Wi-Fi',
+      'tv.nodata.title': '暂时看不到作业',
+      'tv.nodata.sub': '连不上 NAS，检查一下电视的 Wi-Fi',
+      'tv.sync.reading': '正在读取…',
+      'tv.sync.updated': '上次更新 {time}',
+      'tv.sync.synced': '已同步 {time}',
+      'tv.sync.none': '还没同步',
+      'rel.ago': '{n} 天前',
+      'rel.in': '{n} 天后',
+      'tv.ready.alt': '{subject} 作业原图',
+      'tv.ready.imgfail': '原图打不开',
+      'tv.ready.imgfail.sub': '文字还在，先照着写',
+      'tv.ready.noimg': '还没有原图',
+      'tv.ready.fallback': '作业',
+      'tv.idx': '第 {i} 项 / 共 {n} 项',
+      'tv.ready.noitems': '这一科没有拆出具体条目，直接看图就好。',
+      'tv.ready.caption': '识别结果，仅供参考 · <em>以原图为准</em>',
+      'tv.pending.name': '正在识别',
+      'tv.pending.idx': '第 {i} 张 / 共 {n} 张',
+      'tv.pending.line1': '正在识别，先看图 · 图是准的',
+      'tv.pending.line2': '文字过一会儿自己出来，先照着图片写。',
+      'tv.pending.cap': '原图已经存好，不会丢',
+      'tv.pending.noimg': '还没有图片',
+      'tv.pending.noimg.sub': '等老师发出来',
+      'tv.pending.imgalt': '作业原图 {n}',
+      'tv.pending.cellfail': '这张图打不开'
+    },
+    en: {
+      'page.title': "Today's homework · Tianzige",
+      'demo.badge': 'Demo data',
+      'nav.prev': 'Previous week',
+      'nav.next': 'Next week',
+      'foot.date': 'Change date',
+      'foot.subject': 'Change subject',
+      'foot.subject.pending': 'Change photo',
+      'foot.view': 'View photo',
+      'foot.back': 'Back',
+      'foot.exit': 'Exit',
+      'photo.alt': 'Original photo',
+      'viewer.err': "This photo won't open right now",
+      'viewer.errsub': 'Read the text instead',
+      'viewer.scroll': 'Scroll',
+      'viewer.mode': 'Full-screen photo · always trust it',
+      'tv.title.today': "Today's homework",
+      'tv.title.yesterday': "Yesterday's homework",
+      'tv.title.other': 'Homework for {d}',
+      'tv.empty.today': 'No homework yet today',
+      'tv.empty.day': 'No homework for this day',
+      'tv.empty.sub': 'It shows up here once the teacher posts it',
+      'tv.nas.title': "Can't reach the NAS",
+      'tv.nas.sub': 'Check that the TV and the NAS are on the same Wi-Fi',
+      'tv.nodata.title': "Homework isn't available",
+      'tv.nodata.sub': "Can't reach the NAS — check the TV's Wi-Fi",
+      'tv.sync.reading': 'Reading…',
+      'tv.sync.updated': 'Updated {time}',
+      'tv.sync.synced': 'Synced {time}',
+      'tv.sync.none': 'Not synced yet',
+      'rel.ago': '{n} days ago',
+      'rel.in': 'in {n} days',
+      'tv.ready.alt': '{subject} — original photo',
+      'tv.ready.imgfail': "Photo won't open",
+      'tv.ready.imgfail.sub': 'The text is still here — work from that',
+      'tv.ready.noimg': 'No photo yet',
+      'tv.ready.fallback': 'Homework',
+      'tv.idx': 'Item {i} of {n}',
+      'tv.ready.noitems': 'No separate items for this subject — just read the photo.',
+      'tv.ready.caption': 'Recognized text — <em>always check the photo</em>',
+      'tv.pending.name': 'Still reading',
+      'tv.pending.idx': 'Photo {i} of {n}',
+      'tv.pending.line1': 'Still reading it — the photo is accurate',
+      'tv.pending.line2': 'The text shows up in a moment — follow the photo for now.',
+      'tv.pending.cap': 'The photo is already saved — nothing will be lost',
+      'tv.pending.noimg': 'No photo yet',
+      'tv.pending.noimg.sub': 'Waiting for the teacher',
+      'tv.pending.imgalt': 'Original photo {n}',
+      'tv.pending.cellfail': "This photo won't open"
+    }
   };
 
-  var tv = document.getElementById('tv');
-  var titleEl = document.getElementById('title');
-  var subDateEl = document.getElementById('subDate');
-  var relChip = document.getElementById('relChip');
-  var syncChip = document.getElementById('syncChip');
-  var daysEl = document.getElementById('days');
-  var figureEl = document.getElementById('figure');
-  var textEl = document.getElementById('text');
-  var emptyBig = document.getElementById('emptyBig');
-  var emptySmall = document.getElementById('emptySmall');
-  var udHint = document.getElementById('udHint');
-  var viewer = document.getElementById('viewer');
-  var vimg = document.getElementById('vimg');
-  var vph = document.getElementById('vph');
-  var demoBadge = document.getElementById('demoBadge');
+  var LS_LANG = 'lang';
+  var LOCALE = 'en-US';
+
+  function pickLang() {
+    var m = /[?&]lang=([a-zA-Z-]+)/.exec(location.search);
+    if (m) return /^zh/i.test(m[1]) ? 'zh' : 'en';
+    try {
+      var s = localStorage.getItem(LS_LANG);
+      if (s === 'zh' || s === 'en') return s;
+    } catch (e) { /* 隐私模式 */ }
+    return /^zh/i.test(String(navigator.language || '')) ? 'zh' : 'en';
+  }
+
+  var lang = pickLang();
+  LOCALE = lang === 'zh' ? 'zh-CN' : 'en-US';
+
+  function fill(s, params) {
+    if (!params) return s;
+    return s.replace(/\{(\w+)\}/g, function (m0, k) {
+      return params[k] != null ? String(params[k]) : m0;
+    });
+  }
+
+  function t(key, params) {
+    var table = I18N[lang] || I18N.en;
+    var s = table[key];
+    if (s == null) s = I18N.en[key];
+    if (s == null) s = key;
+    return fill(s, params);
+  }
+
+  /* ================= 科目名映射 ================= */
+  var SUBJECT_EN = {
+    '语文': 'Chinese',
+    '数学': 'Math',
+    '英语': 'English',
+    '科学': 'Science',
+    '道法': 'Civics',
+    '其他': 'Other'
+  };
+  function subjectName(s) {
+    if (!s) return '';
+    if (lang === 'zh') return s;
+    return SUBJECT_EN[s] || s;
+  }
 
   /* ================= 日期工具 ================= */
   function pad(n) { return String(n).padStart(2, '0'); }
@@ -309,16 +432,134 @@
     if (!d) return '';
     return pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
+  function fmt(d, opts) {
+    try { return new Intl.DateTimeFormat(LOCALE, opts).format(d); }
+    catch (e) { return ''; }
+  }
+  /* 2026年11月12日 星期四 / Thu, Nov 12, 2026 */
   function fullDate(s) {
     var d = parseYmd(s);
     if (!d) return '';
-    return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 星期' +
-      '日一二三四五六'[d.getDay()];
+    if (lang === 'zh') {
+      return fmt(d, { year:'numeric', month:'long', day:'numeric' }) + ' ' + fmt(d, { weekday:'long' });
+    }
+    return fmt(d, { weekday:'short', month:'short', day:'numeric', year:'numeric' });
   }
+  /* 11月9日 / Nov 9 */
   function shortDate(s) {
     var d = parseYmd(s);
-    return d ? (d.getMonth() + 1) + '月' + d.getDate() + '日' : '';
+    if (!d) return '';
+    return fmt(d, { month: lang === 'zh' ? 'long' : 'short', day:'numeric' });
   }
+  /* 周四 / Thu */
+  function weekdayShort(s) {
+    var d = parseYmd(s);
+    if (!d) return '';
+    return fmt(d, { weekday:'short' });
+  }
+  /* 3 天前 / 3 days ago（负数 = 未来） */
+  function relText(ago) {
+    if (lang === 'zh') return ago >= 0 ? t('rel.ago', { n: ago }) : t('rel.in', { n: Math.abs(ago) });
+    try {
+      return new Intl.RelativeTimeFormat('en', { numeric:'always' }).format(-ago, 'day');
+    } catch (e) {
+      return t('rel.ago', { n: ago });
+    }
+  }
+
+  /* ================= 元素 ================= */
+  var tv = document.getElementById('tv');
+  var titleEl = document.getElementById('title');
+  var subDateEl = document.getElementById('subDate');
+  var relChip = document.getElementById('relChip');
+  var syncChip = document.getElementById('syncChip');
+  var daysEl = document.getElementById('days');
+  var figureEl = document.getElementById('figure');
+  var textEl = document.getElementById('text');
+  var emptyBig = document.getElementById('emptyBig');
+  var emptySmall = document.getElementById('emptySmall');
+  var udHint = document.getElementById('udHint');
+  var viewer = document.getElementById('viewer');
+  var vimg = document.getElementById('vimg');
+  var vph = document.getElementById('vph');
+  var demoBadge = document.getElementById('demoBadge');
+  var langToggle = document.getElementById('langToggle');
+
+  var BASE_KEY = 'tzg.base';
+  var base = '';
+  try { base = localStorage.getItem(BASE_KEY) || ''; } catch (e) { base = ''; }
+  base = String(base).trim().replace(/\/+$/, '');
+
+  var S = {
+    mock: /[?&]mock=1/.test(location.search),
+    mockAuto: false,
+    today: null,
+    sel: null,
+    weekStart: null,
+    day: null,
+    days: [],
+    subjIdx: 0,
+    imgIdx: 0,
+    stamp: null,
+    offline: false,
+    noData: false,
+    viewer: false,
+    vy: 0,
+    imgTouched: false   // 按过 ↑↓ 之后才在网格里标出「当前这张」
+  };
+
+  /* ================= 语言 ================= */
+  function applyStatic() {
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : 'en';
+    document.title = t('page.title');
+
+    var i, el;
+    var texts = document.querySelectorAll('[data-i18n]');
+    for (i = 0; i < texts.length; i++) {
+      el = texts[i];
+      el.textContent = t(el.getAttribute('data-i18n'));
+    }
+    var phs = document.querySelectorAll('[data-i18n-placeholder]');
+    for (i = 0; i < phs.length; i++) {
+      el = phs[i];
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    }
+    var alts = document.querySelectorAll('[data-i18n-alt]');
+    for (i = 0; i < alts.length; i++) {
+      el = alts[i];
+      el.setAttribute('alt', t(el.getAttribute('data-i18n-alt')));
+    }
+    var arms = document.querySelectorAll('[data-i18n-aria]');
+    for (i = 0; i < arms.length; i++) {
+      el = arms[i];
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+    }
+    var titles = document.querySelectorAll('[data-i18n-title]');
+    for (i = 0; i < titles.length; i++) {
+      el = titles[i];
+      el.setAttribute('title', t(el.getAttribute('data-i18n-title')));
+    }
+    var opts = langToggle.querySelectorAll('[data-lang]');
+    for (i = 0; i < opts.length; i++) {
+      opts[i].classList.toggle('on', opts[i].getAttribute('data-lang') === lang);
+    }
+  }
+
+  function refreshLang() {
+    applyStatic();
+    if (S.day) render(); else renderNoData();
+  }
+
+  function setLang(next) {
+    if (next !== 'zh' && next !== 'en') return;
+    lang = next;
+    LOCALE = lang === 'zh' ? 'zh-CN' : 'en-US';
+    try { localStorage.setItem(LS_LANG, lang); } catch (e) { /* 隐私模式 */ }
+    refreshLang();
+    renderWeek();
+  }
+
+  langToggle.onclick = function () { setLang(lang === 'zh' ? 'en' : 'zh'); };
 
   /* ================= 缓存 ================= */
   function writeCache(key, data) {
@@ -447,15 +688,15 @@
     var ago = (typeof d.days_ago === 'number') ? d.days_ago : diffDays(S.today || d.date, d.date);
 
     titleEl.textContent = (d.is_today || ago === 0)
-      ? '今天的作业'
-      : (ago === 1 ? '昨天的作业' : shortDate(d.date) + '的作业');
+      ? t('tv.title.today')
+      : (ago === 1 ? t('tv.title.yesterday') : t('tv.title.other', { d: shortDate(d.date) }));
     subDateEl.textContent = fullDate(d.date);
 
     if (ago > 1) {
-      relChip.textContent = ago + ' 天前';
+      relChip.textContent = relText(ago);
       relChip.style.display = '';
     } else if (ago < 0) {
-      relChip.textContent = Math.abs(ago) + ' 天后';
+      relChip.textContent = relText(ago);
       relChip.style.display = '';
     } else {
       relChip.style.display = 'none';
@@ -463,17 +704,17 @@
 
     syncChip.className = 'chip' + (S.offline ? ' stale' : '');
     syncChip.textContent = S.stamp
-      ? (S.offline ? '上次更新 ' + hm(S.stamp) : '已同步 ' + hm(S.stamp))
-      : '还没同步';
+      ? (S.offline ? t('tv.sync.updated', { time: hm(S.stamp) }) : t('tv.sync.synced', { time: hm(S.stamp) }))
+      : t('tv.sync.none');
 
     tv.classList.remove('is-empty');
     tv.classList.remove('loading');
 
     if (d.state === 'empty') {
-      emptyBig.textContent = d.is_today ? '今天还没有作业' : '这天还没有作业';
-      emptySmall.textContent = '老师发出来之后，这里会自己出现';
+      emptyBig.textContent = d.is_today ? t('tv.empty.today') : t('tv.empty.day');
+      emptySmall.textContent = t('tv.empty.sub');
       tv.classList.add('is-empty');
-      setUd('换科目');
+      setUd(t('foot.subject'));
       renderWeek();
       return;
     }
@@ -489,19 +730,15 @@
   }
 
   function renderNoData() {
-    titleEl.textContent = '今天的作业';
+    titleEl.textContent = t('tv.title.today');
     subDateEl.textContent = '';
     relChip.style.display = 'none';
     syncChip.className = 'chip stale';
-    syncChip.textContent = '连不上 NAS';
-    emptyBig.textContent = '连不上 NAS';
-    emptySmall.textContent = '检查一下电视和 NAS 是不是在同一个 Wi-Fi';
-    var d = S.sel || S.today;
-    emptyBig.textContent = '暂时看不到作业';
-    emptySmall.textContent = '连不上 NAS，检查一下电视的 Wi-Fi';
+    syncChip.textContent = t('tv.nas.title');
+    emptyBig.textContent = t('tv.nodata.title');
+    emptySmall.textContent = t('tv.nodata.sub');
     tv.classList.add('is-empty');
     renderWeek();
-    void d;
   }
 
   function renderReady(d) {
@@ -510,6 +747,7 @@
     if (!s) { renderPending(d); return; }
     var items = s.items || [];
     var imgUrl = s.image_url || pickImage(d, S.subjIdx);
+    var subj = subjectName(s.subject);
 
     figureEl.textContent = '';
     var photo = document.createElement('div');
@@ -517,20 +755,20 @@
 
     if (imgUrl) {
       var img = document.createElement('img');
-      img.alt = s.subject + ' 作业原图';
+      img.alt = t('tv.ready.alt', { subject: subj || t('tv.ready.fallback') });
       img.onerror = function () {
         photo.textContent = '';
-        photo.appendChild(placeholder('原图打不开', '文字还在，先照着写'));
+        photo.appendChild(placeholder(t('tv.ready.imgfail'), t('tv.ready.imgfail.sub')));
       };
       img.src = resolveImg(imgUrl);
       photo.appendChild(img);
     } else {
-      photo.appendChild(placeholder('还没有原图', ''));
+      photo.appendChild(placeholder(t('tv.ready.noimg'), ''));
     }
 
     var tag = document.createElement('div');
     tag.className = 'tag';
-    tag.textContent = s.subject + ' ' + (S.subjIdx + 1) + ' / ' + subjects.length;
+    tag.textContent = subj + ' ' + (S.subjIdx + 1) + ' / ' + subjects.length;
     photo.appendChild(tag);
     figureEl.appendChild(photo);
 
@@ -539,10 +777,10 @@
     head.className = 'subject';
     var name = document.createElement('div');
     name.className = 'name';
-    name.textContent = s.subject || '作业';
+    name.textContent = subj || t('tv.ready.fallback');
     var idx = document.createElement('div');
     idx.className = 'idx';
-    idx.textContent = '第 ' + (S.subjIdx + 1) + ' 项 / 共 ' + subjects.length + ' 项';
+    idx.textContent = t('tv.idx', { i: S.subjIdx + 1, n: subjects.length });
     head.appendChild(name); head.appendChild(idx);
 
     var rule = document.createElement('div');
@@ -553,7 +791,7 @@
     if (!items.length) {
       var p0 = document.createElement('p');
       p0.className = 'muted';
-      p0.textContent = '这一科没有拆出具体条目，直接看图就好。';
+      p0.textContent = t('tv.ready.noitems');
       lines.appendChild(p0);
     } else {
       items.forEach(function (it, i) {
@@ -569,13 +807,13 @@
 
     var cap = document.createElement('div');
     cap.className = 'caption';
-    cap.innerHTML = '识别结果，仅供参考 · <em>以原图为准</em>';
+    cap.innerHTML = t('tv.ready.caption');
 
     textEl.appendChild(head);
     textEl.appendChild(rule);
     textEl.appendChild(lines);
     textEl.appendChild(cap);
-    setUd('换科目');
+    setUd(t('foot.subject'));
   }
 
   function renderPending(d) {
@@ -591,17 +829,17 @@
       grid.style.gridTemplateColumns = '1fr';
       var none = document.createElement('div');
       none.className = 'cell';
-      none.appendChild(placeholder('还没有图片', '等老师发出来'));
+      none.appendChild(placeholder(t('tv.pending.noimg'), t('tv.pending.noimg.sub')));
       grid.appendChild(none);
     } else {
       images.forEach(function (im, i) {
         var cell = document.createElement('div');
         cell.className = 'cell' + (S.imgTouched && i === S.imgIdx ? ' cur' : '');
         var img = document.createElement('img');
-        img.alt = '作业原图 ' + (i + 1);
+        img.alt = t('tv.pending.imgalt', { n: i + 1 });
         img.onerror = function () {
           cell.textContent = '';
-          cell.appendChild(placeholder('这张图打不开', ''));
+          cell.appendChild(placeholder(t('tv.pending.cellfail'), ''));
         };
         img.src = resolveImg(im.url);
         cell.appendChild(img);
@@ -616,10 +854,10 @@
     head.className = 'subject';
     var name = document.createElement('div');
     name.className = 'name';
-    name.textContent = '正在识别';
+    name.textContent = t('tv.pending.name');
     var idx = document.createElement('div');
     idx.className = 'idx';
-    idx.textContent = images.length ? ('第 ' + (S.imgIdx + 1) + ' 张 / 共 ' + images.length + ' 张') : '';
+    idx.textContent = images.length ? t('tv.pending.idx', { i: S.imgIdx + 1, n: images.length }) : '';
     head.appendChild(name); head.appendChild(idx);
 
     var rule = document.createElement('div');
@@ -628,21 +866,21 @@
     var lines = document.createElement('div');
     lines.className = 'lines';
     var p1 = document.createElement('p');
-    p1.textContent = '正在识别，先看图 · 图是准的';
+    p1.textContent = t('tv.pending.line1');
     var p2 = document.createElement('p');
     p2.className = 'muted';
-    p2.textContent = '文字过一会儿自己出来，先照着图片写。';
+    p2.textContent = t('tv.pending.line2');
     lines.appendChild(p1); lines.appendChild(p2);
 
     var cap = document.createElement('div');
     cap.className = 'caption';
-    cap.textContent = '原图已经存好，不会丢';
+    cap.textContent = t('tv.pending.cap');
 
     textEl.appendChild(head);
     textEl.appendChild(rule);
     textEl.appendChild(lines);
     textEl.appendChild(cap);
-    setUd('换图片');
+    setUd(t('foot.subject.pending'));
   }
 
   function placeholder(title, sub) {
@@ -651,9 +889,9 @@
     var b = document.createElement('div');
     b.className = 'box';
     b.textContent = '!';
-    var t = document.createElement('div');
-    t.textContent = title;
-    box.appendChild(b); box.appendChild(t);
+    var tt = document.createElement('div');
+    tt.textContent = title;
+    box.appendChild(b); box.appendChild(tt);
     if (sub) {
       var s = document.createElement('div');
       s.className = 't2';
@@ -675,7 +913,7 @@
     return base + u;
   }
 
-  function setUd(t) { udHint.textContent = t; }
+  function setUd(text) { udHint.textContent = text; }
 
   /* ================= 日期条 ================= */
   function renderWeek() {
@@ -695,7 +933,7 @@
 
       var w = document.createElement('div');
       w.className = 'w';
-      w.textContent = '周' + '日一二三四五六'[dt.getDay()];
+      w.textContent = weekdayShort(ds);
       var dnum = document.createElement('div');
       dnum.className = 'd';
       dnum.textContent = dt.getDate();
@@ -879,8 +1117,8 @@
   function item(id, content) { return { id: id, content: content, done: false }; }
 
   function mockDay(date) {
-    var today = todayYmd();
-    var ago = diffDays(today, date);
+    var td = todayYmd();
+    var ago = diffDays(td, date);
     var imgs = mockImages();
     if (ago === 0) {
       return {
@@ -889,7 +1127,8 @@
         subjects: [
           { subject: '语文', image_url: imgs[0].url, items: [item(1, '朗读第 32 页课文三遍'), item(2, '抄写生字「秋、风、叶」各两遍'), item(3, '背诵第一自然段')] },
           { subject: '数学', image_url: imgs[1].url, items: [item(4, '练习册 P18，第 1—6 题'), item(5, '口算本一页，计时 5 分钟'), item(6, '错的题在下面重写一遍'), item(7, '家长签字')] },
-          { subject: '英语', image_url: imgs[2].url, items: [item(8, '跟读 Unit 4 音频三遍'), item(9, '抄写单词 each、both、never 各三遍')] }
+          { subject: '英语', image_url: imgs[2].url, items: [item(8, '跟读 Unit 4 音频三遍'), item(9, '抄写单词 each、both、never 各三遍')] },
+          { subject: '美术', image_url: imgs[0].url, items: [item(10, '画一张秋天的树叶')] }
         ],
         batch_ids: [318]
       };
@@ -910,7 +1149,7 @@
         batch_ids: [316]
       };
     }
-    return { date: date, is_today: ago === 0, days_ago: ago, state: 'empty', images: [], subjects: [], batch_ids: [] };
+    return { date: date, is_today: false, days_ago: ago, state: 'empty', images: [], subjects: [], batch_ids: [] };
   }
 
   function mockDays(from, to) {
@@ -954,6 +1193,7 @@
   if (S.mock) demoBadge.classList.add('on');
 
   (function boot() {
+    applyStatic();
     fit();
     var local = todayYmd();
     S.today = local;

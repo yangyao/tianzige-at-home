@@ -242,6 +242,17 @@
   }
   #demoBadge.on { display:block; }
 
+  /* ---------- 语言切换 ---------- */
+  #langToggle {
+    position:fixed; right:12px; bottom:calc(118px + env(safe-area-inset-bottom)); z-index:75;
+    display:flex; align-items:center; gap:3px;
+    background:transparent; border:0; color:var(--dim); font-size:11px; letter-spacing:.3px;
+    padding:6px 2px; cursor:pointer;
+  }
+  #langToggle .sep { opacity:.45; }
+  #langToggle .on { color:var(--text2); font-weight:700; }
+  #langToggle:hover { color:var(--text2); }
+
   @media (max-width:420px) {
     header h1 { font-size:20px; }
     .wrap { padding:18px 16px 128px; }
@@ -254,21 +265,21 @@
 <div class="wrap">
   <header>
     <img src="assets/brand.png" width="36" height="36" alt="">
-    <h1>家里的田字格</h1>
-    <span class="kind">作业上传</span>
+    <h1 data-i18n="app.name">家里的田字格</h1>
+    <span class="kind" data-i18n="header.kind">作业上传</span>
     <span class="date" id="todayTxt"></span>
   </header>
 
   <div class="errbar" id="errbar"></div>
 
-  <h2 class="upload-title">把作业照片放进来</h2>
-  <p class="upload-subtitle">截图粘贴，传完就能离开</p>
-  <div class="drop" id="drop" role="button" tabindex="0" aria-label="选择作业照片">
+  <h2 class="upload-title" data-i18n="upload.title">把作业照片放进来</h2>
+  <p class="upload-subtitle" data-i18n="upload.subtitle">截图粘贴，传完就能离开</p>
+  <div class="drop" id="drop" role="button" tabindex="0" aria-label="选择作业照片" data-i18n-aria="drop.aria">
     <div class="ic">+</div>
-    <div class="t1">选择图片，或拖到这里</div>
+    <div class="t1" data-i18n="drop.t1">选择图片，或拖到这里</div>
     <div class="t2">
-      截图后按 <kbd>⌘</kbd> <kbd>V</kbd> 直接粘贴，可以贴多张<br>
-      也可以把图片拖进来，或点这里选择
+      <span data-i18n="drop.teach.a">截图后按</span> <kbd>⌘</kbd> <kbd>V</kbd> <span data-i18n="drop.teach.b">直接粘贴，可以贴多张</span><br>
+      <span data-i18n="drop.line2">也可以把图片拖进来，或点这里选择</span>
     </div>
     <input type="file" id="file" accept="image/*" multiple>
   </div>
@@ -277,73 +288,342 @@
   <div class="hintbar" id="hintbar"></div>
 
   <div class="field">
-    <label for="note">老师的话（选填）</label>
-    <textarea id="note" placeholder="可以粘贴老师的补充说明" maxlength="500"></textarea>
+    <label for="note" data-i18n="note.label">老师的话（选填）</label>
+    <textarea id="note" placeholder="可以粘贴老师的补充说明" data-i18n-placeholder="note.ph" maxlength="500"></textarea>
   </div>
 
   <div class="row">
-    <div class="item"><label for="date">作业日期</label><input type="date" id="date"></div>
+    <div class="item"><label for="date" data-i18n="date.label">作业日期</label><input type="date" id="date"></div>
   </div>
 
   <div class="recent">
-    <div class="h"><span>最近上传</span><button class="rf" id="refreshBtn" type="button">刷新</button></div>
-    <div id="tasks"><div class="emptyline">还没有上传过</div></div>
+    <div class="h"><span data-i18n="recent.title">最近上传</span><button class="rf" id="refreshBtn" type="button" data-i18n="recent.refresh">刷新</button></div>
+    <div id="tasks"><div class="emptyline" data-i18n="recent.empty">还没有上传过</div></div>
   </div>
 
   <details class="settings ai-settings" id="aiSettings">
-    <summary>AI 服务设置</summary>
+    <summary data-i18n="ai.summary">AI 服务设置</summary>
     <form id="aiForm" class="ai-form" autocomplete="off">
       <fieldset id="aiFields">
         <div class="ai-field">
-          <label for="aiProfile">服务类型</label>
+          <label for="aiProfile" data-i18n="ai.profile">服务类型</label>
           <select id="aiProfile">
-            <option value="openai">OpenAI 兼容</option>
-            <option value="zai">Z.AI / GLM</option>
+            <option value="openai" data-i18n="ai.profile.openai">OpenAI 兼容</option>
+            <option value="zai" data-i18n="ai.profile.zai">Z.AI / GLM</option>
           </select>
         </div>
         <div class="ai-field">
-          <label for="aiBase">API 地址</label>
+          <label for="aiBase" data-i18n="ai.base">API 地址</label>
           <input id="aiBase" type="url" required placeholder="https://example.com/v1" spellcheck="false" autocomplete="off">
-          <p class="sethint">填写兼容接口的基础地址，也可以粘贴完整的 /chat/completions 地址。</p>
+          <p class="sethint" data-i18n="ai.base.hint">填写兼容接口的基础地址，也可以粘贴完整的 /chat/completions 地址。</p>
         </div>
         <div class="ai-field">
-          <label for="aiModel">模型名称</label>
-          <input id="aiModel" type="text" required maxlength="200" placeholder="填写支持图片输入的模型" spellcheck="false" autocomplete="off">
-          <p class="sethint">同一个模型用于识别照片和整理作业，需要支持图片输入。</p>
+          <label for="aiModel" data-i18n="ai.model">模型名称</label>
+          <input id="aiModel" type="text" required maxlength="200" placeholder="填写支持图片输入的模型" data-i18n-placeholder="ai.model.ph" spellcheck="false" autocomplete="off">
+          <p class="sethint" data-i18n="ai.model.hint">同一个模型用于识别照片和整理作业，需要支持图片输入。</p>
         </div>
         <div class="ai-field">
-          <label for="aiKey">API 密钥</label>
-          <input id="aiKey" type="password" maxlength="4096" placeholder="填写服务商提供的密钥" autocomplete="new-password" spellcheck="false">
-          <p class="sethint" id="aiKeyHelp">密钥只保存在 NAS，保存后不回显到网页。</p>
+          <label for="aiKey" data-i18n="ai.key">API 密钥</label>
+          <input id="aiKey" type="password" maxlength="4096" placeholder="填写服务商提供的密钥" data-i18n-placeholder="ai.key.ph" autocomplete="new-password" spellcheck="false">
+          <p class="sethint" id="aiKeyHelp" data-i18n="ai.key.hint.default">密钥只保存在 NAS，保存后不回显到网页。</p>
         </div>
-        <label class="ai-check"><input id="aiNoAuth" type="checkbox">此服务无需密钥（本地模型）</label>
+        <label class="ai-check"><input id="aiNoAuth" type="checkbox"><span data-i18n="ai.noauth">此服务无需密钥（本地模型）</span></label>
         <div class="ai-actions">
-          <button id="aiTest" type="button">测试连接</button>
-          <button class="ai-save" type="submit">保存并应用</button>
+          <button id="aiTest" type="button" data-i18n="ai.test">测试连接</button>
+          <button class="ai-save" type="submit" data-i18n="ai.save">保存并应用</button>
         </div>
-        <p class="sethint">测试会发送一张小图片，可能消耗少量额度；不会修改已保存的设置。保存后新任务立即使用新配置。</p>
+        <p class="sethint" data-i18n="ai.note">测试会发送一张小图片，可能消耗少量额度；不会修改已保存的设置。保存后新任务立即使用新配置。</p>
       </fieldset>
       <p id="aiMessage" class="ai-message" role="status" aria-live="polite"></p>
     </form>
   </details>
 
   <details class="settings" id="settings">
-    <summary>服务地址</summary>
+    <summary data-i18n="server.summary">服务地址</summary>
     <div class="setrow">
-      <input id="baseIn" type="text" inputmode="url" autocomplete="off" placeholder="留空即可，例如 http://192.168.1.5:8080">
-      <button class="save" id="baseSave" type="button">保存</button>
+      <input id="baseIn" type="text" inputmode="url" autocomplete="off" placeholder="留空即可，例如 http://192.168.1.5:8080" data-i18n-placeholder="server.ph">
+      <button class="save" id="baseSave" type="button" data-i18n="server.save">保存</button>
     </div>
-    <div class="sethint">页面由 NAS 托管时留空就能用。本地直接打开（file://）时，填 NAS 的地址。</div>
+    <div class="sethint" data-i18n="server.hint">页面由 NAS 托管时留空就能用。本地直接打开（file://）时，填 NAS 的地址。</div>
   </details>
 </div>
 
-<div class="submit"><button id="send" type="button" disabled>上传</button><p>收到图片后就能离开，不用等识别</p></div>
+<button id="langToggle" type="button" aria-label="切换语言 / Switch language"><span data-lang="zh">中文</span><span class="sep">/</span><span data-lang="en">EN</span></button>
+<div class="submit"><button id="send" type="button" disabled data-i18n="send.label">上传</button><p data-i18n="send.note">收到图片后就能离开，不用等识别</p></div>
 <div id="toast" role="status" aria-live="polite"><span class="ck">✓</span><span id="toastTxt"></span></div>
-<div id="demoBadge">演示数据</div>
+<div id="demoBadge" data-i18n="demo.badge">演示数据</div>
 
 <script>
 (function () {
   'use strict';
+
+  /* ================= 文案 ================= */
+  var I18N = {
+    zh: {
+      'page.title': '作业上传 · 家里的田字格',
+      'app.name': '家里的田字格',
+      'header.kind': '作业上传',
+      'upload.title': '把作业照片放进来',
+      'upload.subtitle': '截图粘贴，传完就能离开',
+      'drop.aria': '选择作业照片',
+      'drop.t1': '选择图片，或拖到这里',
+      'drop.teach.a': '截图后按',
+      'drop.teach.b': '直接粘贴，可以贴多张',
+      'drop.line2': '也可以把图片拖进来，或点这里选择',
+      'note.label': '老师的话（选填）',
+      'note.ph': '可以粘贴老师的补充说明',
+      'date.label': '作业日期',
+      'recent.title': '最近上传',
+      'recent.refresh': '刷新',
+      'recent.empty': '还没有上传过',
+      'recent.fail': '读不到最近上传：{msg}',
+      'recent.failFallback': '检查服务地址',
+      'ai.summary': 'AI 服务设置',
+      'ai.profile': '服务类型',
+      'ai.profile.openai': 'OpenAI 兼容',
+      'ai.profile.zai': 'Z.AI / GLM',
+      'ai.base': 'API 地址',
+      'ai.base.hint': '填写兼容接口的基础地址，也可以粘贴完整的 /chat/completions 地址。',
+      'ai.model': '模型名称',
+      'ai.model.ph': '填写支持图片输入的模型',
+      'ai.model.hint': '同一个模型用于识别照片和整理作业，需要支持图片输入。',
+      'ai.key': 'API 密钥',
+      'ai.key.ph': '填写服务商提供的密钥',
+      'ai.key.ph.none': '此服务无需密钥',
+      'ai.key.ph.keep': '已保存，留空保持不变',
+      'ai.key.hint.default': '密钥只保存在 NAS，保存后不回显到网页。',
+      'ai.key.hint.none': '仅适用于未启用密钥的本地服务。',
+      'ai.key.hint.keep': '密钥已保存且不会回显；留空保持不变，更换 API 地址后需重新填写。',
+      'ai.noauth': '此服务无需密钥（本地模型）',
+      'ai.test': '测试连接',
+      'ai.save': '保存并应用',
+      'ai.note': '测试会发送一张小图片，可能消耗少量额度；不会修改已保存的设置。保存后新任务立即使用新配置。',
+      'ai.loading': '正在读取设置…',
+      'ai.mock': '演示模式不读取或修改真实 AI 设置',
+      'ai.file': '请直接打开 NAS 的上传页，再设置 AI 服务。',
+      'ai.badbase': '请先检查 NAS 服务地址。',
+      'ai.badjson': '服务返回的内容看不懂',
+      'ai.reqfail': 'AI 设置请求没有完成',
+      'ai.offline': '连不上 NAS，设置没有保存',
+      'ai.timeout': '等待服务回应超时，请稍后重试',
+      'ai.testing': '正在测试图片请求…',
+      'ai.saving': '正在保存设置…',
+      'ai.saved': '已保存。新的识别任务会立即使用这组配置。',
+      'ai.test.ok': '连接成功',
+      'server.summary': '服务地址',
+      'server.ph': '留空即可，例如 http://192.168.1.5:8080',
+      'server.save': '保存',
+      'server.hint': '页面由 NAS 托管时留空就能用。本地直接打开（file://）时，填 NAS 的地址。',
+      'send.label': '上传',
+      'send.n': '上传 {n} 张',
+      'send.uploading': '上传中 {n}%',
+      'send.retry': '没传上去，点这里重试',
+      'send.note': '收到图片后就能离开，不用等识别',
+      'demo.badge': '演示数据',
+      'hint.overflow': '一次最多 {limit} 张，多出来的没加进来',
+      'hint.oversize': '有 {n} 张超过 20MB，没加进来',
+      'hint.notimage': '有 {n} 个文件不是图片，没加进来',
+      'thumb.alt': '图片 {n}',
+      'thumb.remove': '移除这张',
+      'st.proc': '处理中',
+      'st.done': '已入库',
+      'st.failed': '这次没识别出来',
+      'action.rerun': '重新识别',
+      'action.rerun.queued': '已排上…',
+      'action.rerun.fail': '重新识别没成功，过一会儿再试',
+      'action.delete': '删除',
+      'action.delete.confirm': '确认删除？',
+      'action.delete.busy': '删除中',
+      'action.delete.fail': '没删掉，过一会儿再试',
+      'task.count': '{n} 张',
+      'task.items': '{n} 条',
+      'toast.dup': '这些图片之前传过了，没有重复入库',
+      'toast.ok': '收到 {n} 张，处理完电视上就有',
+      'base.saved': '服务地址已保存：{v}',
+      'base.sameorigin': '已改回同源地址',
+      'err.noDate': '先选一下这是哪天的作业',
+      'err.http400': '这次没传上去：请求不太对，检查一下日期和图片',
+      'err.http413': '这次没传上去：单张图片不能超过 20MB',
+      'err.http415': '这次没传上去：只接受 jpg / png / heic / webp',
+      'err.http404': '这次没传上去：服务地址可能不对',
+      'err.http500': '这次没传上去：NAS 那边出错了，等一会儿再试',
+      'err.httpOther': '这次没传上去（{status}），点重试再来一次',
+      'err.offline': '连不上 NAS，检查服务地址或网络',
+      'err.timeout': '等太久没回应，稍后点重试',
+      'err.badresp': '服务返回的内容看不懂，点重试再来一次',
+      'err.upload.offline': '没传上去：连不上 NAS，检查是不是同一个 Wi-Fi',
+      'err.upload.timeout': '没传上去：等了 30 秒还没回应，点重试再来一次',
+      'err.upload.failed': '没传上去，点重试再来一次',
+      'code.bad_request': '请求有问题',
+      'code.invalid_date': '日期格式不对',
+      'code.too_many_files': '一次最多 6 张',
+      'code.file_too_large': '单张不能超过 20MB',
+      'code.unsupported_type': '只支持 jpg/png/heic/webp',
+      'code.not_found': '找不到这个记录',
+      'code.ocr_failed': '这次没识别出来',
+      'code.parse_failed': '整理作业时出错了',
+      'code.llm_unavailable': 'AI 服务暂时不可用',
+      'code.internal': '服务出了点问题'
+    },
+    en: {
+      'page.title': 'Upload homework · Tianzige',
+      'app.name': 'Tianzige',
+      'header.kind': 'Homework',
+      'upload.title': 'Drop the homework photos here',
+      'upload.subtitle': "Paste a screenshot — you can go once it's in",
+      'drop.aria': 'Choose homework photos',
+      'drop.t1': 'Choose photos, or drop them here',
+      'drop.teach.a': 'Press',
+      'drop.teach.b': 'right after a screenshot — several at once',
+      'drop.line2': 'Or drag the photos in, or click to choose',
+      'note.label': 'Note from the teacher (optional)',
+      'note.ph': 'Paste anything extra the teacher said',
+      'date.label': 'Homework date',
+      'recent.title': 'Recent uploads',
+      'recent.refresh': 'Refresh',
+      'recent.empty': 'Nothing uploaded yet',
+      'recent.fail': "Can't load recent uploads — {msg}",
+      'recent.failFallback': 'check the server address',
+      'ai.summary': 'AI service settings',
+      'ai.profile': 'Service type',
+      'ai.profile.openai': 'OpenAI-compatible',
+      'ai.profile.zai': 'Z.AI / GLM',
+      'ai.base': 'API address',
+      'ai.base.hint': 'Base URL of a compatible API. You can also paste the full /chat/completions URL.',
+      'ai.model': 'Model name',
+      'ai.model.ph': 'A model that accepts image input',
+      'ai.model.hint': 'One model reads the photos and sorts the homework, so it must accept image input.',
+      'ai.key': 'API key',
+      'ai.key.ph': 'The key from your provider',
+      'ai.key.ph.none': 'No key needed',
+      'ai.key.ph.keep': 'Saved — leave blank to keep',
+      'ai.key.hint.default': 'The key stays on the NAS and is never shown again.',
+      'ai.key.hint.none': "For local services that don't use a key.",
+      'ai.key.hint.keep': "The key is saved and won't be shown. Leave blank to keep it; changing the API address means entering it again.",
+      'ai.noauth': 'No key needed (local model)',
+      'ai.test': 'Test connection',
+      'ai.save': 'Save and apply',
+      'ai.note': "The test sends one small photo and may use a little credit. It won't change saved settings. Saved settings apply to new jobs right away.",
+      'ai.loading': 'Loading settings…',
+      'ai.mock': "Demo mode — real AI settings aren't read or changed",
+      'ai.file': 'Open the upload page from the NAS to set up AI.',
+      'ai.badbase': 'Check the NAS address first.',
+      'ai.badjson': "Couldn't read the server's reply",
+      'ai.reqfail': "The AI settings request didn't finish",
+      'ai.offline': "Can't reach the NAS — settings weren't saved",
+      'ai.timeout': 'No reply in time — try again later',
+      'ai.testing': 'Testing with a photo…',
+      'ai.saving': 'Saving…',
+      'ai.saved': 'Saved. New jobs use these settings right away.',
+      'ai.test.ok': 'Connected',
+      'server.summary': 'Server address',
+      'server.ph': 'Leave blank, e.g. http://192.168.1.5:8080',
+      'server.save': 'Save',
+      'server.hint': 'Leave blank when the NAS serves this page. Opened locally (file://), enter the NAS address.',
+      'send.label': 'Upload',
+      'send.n.one': 'Upload 1 photo',
+      'send.n.many': 'Upload {n} photos',
+      'send.uploading': 'Uploading {n}%',
+      'send.retry': "Couldn't upload — tap to retry",
+      'send.note': 'You can go once the photos are in — no need to wait',
+      'demo.badge': 'Demo data',
+      'hint.overflow': 'Up to {limit} at a time — the rest weren\'t added',
+      'hint.oversize.one': 'Skipped 1 photo over 20 MB',
+      'hint.oversize.many': 'Skipped {n} photos over 20 MB',
+      'hint.notimage.one': "Skipped 1 file that isn't an image",
+      'hint.notimage.many': "Skipped {n} files that aren't images",
+      'thumb.alt': 'Photo {n}',
+      'thumb.remove': 'Remove this photo',
+      'st.proc': 'Working…',
+      'st.done': 'Ready',
+      'st.failed': "Couldn't read this one",
+      'action.rerun': 'Try again',
+      'action.rerun.queued': 'Queued…',
+      'action.rerun.fail': "Couldn't start it — try again in a moment",
+      'action.delete': 'Delete',
+      'action.delete.confirm': 'Delete?',
+      'action.delete.busy': 'Deleting…',
+      'action.delete.fail': "Couldn't delete — try again in a moment",
+      'task.count.one': '1 photo',
+      'task.count.many': '{n} photos',
+      'task.items.one': '1 item',
+      'task.items.many': '{n} items',
+      'toast.dup': 'These were uploaded before — nothing new added',
+      'toast.ok.one': "Got 1 photo. It'll be on the TV shortly.",
+      'toast.ok.many': "Got {n} photos. They'll be on the TV shortly.",
+      'base.saved': 'Server address saved: {v}',
+      'base.sameorigin': 'Switched back to the same origin',
+      'err.noDate': 'Pick the homework date first',
+      'err.http400': "Couldn't upload — something's wrong with the request; check the date and photos",
+      'err.http413': "Couldn't upload — each photo must be under 20 MB",
+      'err.http415': "Couldn't upload — only jpg, png, heic or webp",
+      'err.http404': "Couldn't upload — the server address may be wrong",
+      'err.http500': "Couldn't upload — the NAS ran into an error; try again in a bit",
+      'err.httpOther': "Couldn't upload ({status}) — tap retry",
+      'err.offline': "Can't reach the NAS — check the address or network",
+      'err.timeout': 'No reply for a while — tap retry later',
+      'err.badresp': "Couldn't read the server's reply — tap retry",
+      'err.upload.offline': "Couldn't upload — can't reach the NAS; check you're on the same Wi-Fi",
+      'err.upload.timeout': "Couldn't upload — no reply in 30 seconds; tap retry",
+      'err.upload.failed': "Couldn't upload — tap to retry",
+      'code.bad_request': "Something's wrong with the request",
+      'code.invalid_date': "That date doesn't look right",
+      'code.too_many_files': 'Up to 6 photos at a time',
+      'code.file_too_large': 'Each photo must be under 20 MB',
+      'code.unsupported_type': 'Only jpg, png, heic or webp',
+      'code.not_found': 'Not found',
+      'code.ocr_failed': "Couldn't read this one",
+      'code.parse_failed': "Couldn't sort out the homework",
+      'code.llm_unavailable': "The AI service isn't available",
+      'code.internal': 'Something went wrong on the server'
+    }
+  };
+
+  var LS_LANG = 'lang';
+  var LOCALE = 'en-US';
+
+  function pickLang() {
+    var m = /[?&]lang=([a-zA-Z-]+)/.exec(location.search);
+    if (m) return /^zh/i.test(m[1]) ? 'zh' : 'en';
+    try {
+      var s = localStorage.getItem(LS_LANG);
+      if (s === 'zh' || s === 'en') return s;
+    } catch (e) { /* 隐私模式 */ }
+    return /^zh/i.test(String(navigator.language || '')) ? 'zh' : 'en';
+  }
+
+  var lang = pickLang();
+  LOCALE = lang === 'zh' ? 'zh-CN' : 'en-US';
+
+  function fill(s, params) {
+    if (!params) return s;
+    return s.replace(/\{(\w+)\}/g, function (m0, k) {
+      return params[k] != null ? String(params[k]) : m0;
+    });
+  }
+
+  function t(key, params) {
+    var table = I18N[lang] || I18N.en;
+    var s = table[key];
+    if (s == null) s = I18N.en[key];
+    if (s == null) s = key;
+    return fill(s, params);
+  }
+
+  /* 单复数：英文用 key.one / key.many，中文只写一个 key */
+  function tn(key, n, params) {
+    var p = {}, k;
+    if (params) { for (k in params) p[k] = params[k]; }
+    p.n = n;
+    var table = I18N[lang] || I18N.en;
+    var suffix = '.' + (n === 1 ? 'one' : 'many');
+    var s = table[key + suffix];
+    if (s == null) s = table[key];
+    if (s == null) s = I18N.en[key + suffix];
+    if (s == null) s = I18N.en[key];
+    if (s == null) s = key;
+    return fill(s, p);
+  }
 
   /* ================= 基础状态 ================= */
   var LIMIT = 6;
@@ -360,6 +640,7 @@
   var hintTimer = null;
   var base = '';
   var mock = /[?&]mock=1/.test(location.search);
+  var listFailed = false;
 
   try { base = localStorage.getItem(BASE_KEY) || ''; } catch (e) { base = ''; }
   base = normalizeBase(base);
@@ -385,6 +666,8 @@
   var toastTx = document.getElementById('toastTxt');
   var demoBadge = document.getElementById('demoBadge');
   var baseIn = document.getElementById('baseIn');
+  var todayTx = document.getElementById('todayTxt');
+  var langToggle = document.getElementById('langToggle');
 
   baseIn.value = base;
 
@@ -408,28 +691,118 @@
     if (!d || isNaN(d.getTime())) return '';
     return pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
+  function fmt(d, opts) {
+    try { return new Intl.DateTimeFormat(LOCALE, opts).format(d); }
+    catch (e) { return ''; }
+  }
+  /* 2026年11月12日 星期三 / Wed, Nov 12, 2026 */
+  function fullDate(d) {
+    if (!d) return '';
+    if (lang === 'zh') {
+      return fmt(d, { year:'numeric', month:'long', day:'numeric' }) + ' ' + fmt(d, { weekday:'long' });
+    }
+    return fmt(d, { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+  }
+  /* 11月9日 / Nov 9 */
+  function shortDate(d) {
+    if (!d) return '';
+    return fmt(d, { month: lang === 'zh' ? 'long' : 'short', day:'numeric' });
+  }
   function labelDate(s) {
     var d = parseYmd(s); if (!d) return s || '';
-    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    return shortDate(d);
+  }
+  function renderToday() { todayTx.textContent = fullDate(new Date()); }
+
+  dateEl.value = ymd(new Date());
+
+  /* ================= 语言 ================= */
+  function applyStatic() {
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : 'en';
+    document.title = t('page.title');
+
+    var i, el;
+    var texts = document.querySelectorAll('[data-i18n]');
+    for (i = 0; i < texts.length; i++) {
+      el = texts[i];
+      el.textContent = t(el.getAttribute('data-i18n'));
+    }
+    var phs = document.querySelectorAll('[data-i18n-placeholder]');
+    for (i = 0; i < phs.length; i++) {
+      el = phs[i];
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    }
+    var arms = document.querySelectorAll('[data-i18n-aria]');
+    for (i = 0; i < arms.length; i++) {
+      el = arms[i];
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+    }
+    var titles = document.querySelectorAll('[data-i18n-title]');
+    for (i = 0; i < titles.length; i++) {
+      el = titles[i];
+      el.setAttribute('title', t(el.getAttribute('data-i18n-title')));
+    }
+    var opts = langToggle.querySelectorAll('[data-lang]');
+    for (i = 0; i < opts.length; i++) {
+      opts[i].classList.toggle('on', opts[i].getAttribute('data-lang') === lang);
+    }
   }
 
-  var now = new Date();
-  dateEl.value = ymd(now);
-  document.getElementById('todayTxt').textContent =
-    (now.getMonth() + 1) + '月' + now.getDate() + '日 周' + '日一二三四五六'[now.getDay()];
+  function refreshLang() {
+    applyStatic();
+    renderToday();
+    paint();
+    if (listFailed) loadList(); else renderList();
+    renderErr();
+    renderToastBody();
+    renderAiNotice();
+    aiKeyHint();
+  }
+
+  function setLang(next) {
+    if (next !== 'zh' && next !== 'en') return;
+    lang = next;
+    LOCALE = lang === 'zh' ? 'zh-CN' : 'en-US';
+    try { localStorage.setItem(LS_LANG, lang); } catch (e) { /* 隐私模式 */ }
+    refreshLang();
+  }
+
+  langToggle.onclick = function () { setLang(lang === 'zh' ? 'en' : 'zh'); };
 
   /* ================= 提示 ================= */
-  function toast(msg) {
-    toastTx.textContent = msg;
+  var toastState = null;
+  var errState = null;
+
+  function specText(s) {
+    if (!s) return '';
+    if (s.countKey) return tn(s.countKey, s.n, s.params);
+    if (s.key) return t(s.key, s.params);
+    return s.text || '';
+  }
+
+  function renderToastBody() { if (toastState) toastTx.textContent = specText(toastState); }
+
+  function toast(spec) {
+    toastState = spec;
+    renderToastBody();
     toastEl.classList.add('on');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 6000);
   }
-  function showErr(msg) {
-    errEl.textContent = msg;
+
+  function renderErr() {
+    if (!errState) { errEl.textContent = ''; errEl.classList.remove('on'); return; }
+    errEl.textContent = specText(errState);
     errEl.classList.add('on');
   }
-  function clearErr() { errEl.textContent = ''; errEl.classList.remove('on'); }
+  function setErr(spec) { errState = spec; renderErr(); }
+  function showErrObj(e, fallbackKey) {
+    if (e && e.i18nKey) setErr({ key: e.i18nKey, params: e.i18nParams });
+    else if (e && e.message) setErr({ text: e.message });
+    else setErr({ key: fallbackKey || 'err.upload.failed' });
+  }
+  function clearErr() { errState = null; renderErr(); }
+
   function showHint(msg) {
     hintEl.textContent = msg;
     hintEl.classList.add('on');
@@ -449,9 +822,9 @@
       files.push(f);
     }
     var msgs = [];
-    if (overflow) msgs.push('一次最多 ' + LIMIT + ' 张，多出来的没加进来');
-    if (oversize) msgs.push('有 ' + oversize + ' 张超过 20MB，没加进来');
-    if (notImage) msgs.push('有 ' + notImage + ' 个文件不是图片，没加进来');
+    if (overflow) msgs.push(t('hint.overflow', { limit: LIMIT }));
+    if (oversize) msgs.push(tn('hint.oversize', oversize));
+    if (notImage) msgs.push(tn('hint.notimage', notImage));
     if (msgs.length) showHint(msgs.join(' · ')); else hintEl.classList.remove('on');
 
     if (files.length) { state.failed = false; clearErr(); }
@@ -472,7 +845,7 @@
 
       var img = document.createElement('img');
       img.src = URL.createObjectURL(f);
-      img.alt = f.name || '图片 ' + (i + 1);
+      img.alt = f.name || t('thumb.alt', { n: i + 1 });
 
       var n = document.createElement('div');
       n.className = 'n';
@@ -482,7 +855,7 @@
       x.className = 'x';
       x.type = 'button';
       x.textContent = '×';
-      x.setAttribute('aria-label', '移除这张');
+      x.setAttribute('aria-label', t('thumb.remove'));
       x.onclick = function (e) { e.stopPropagation(); removeFile(i); };
 
       box.appendChild(img); box.appendChild(n); box.appendChild(x);
@@ -499,18 +872,18 @@
     if (state.uploading) {
       sendBtn.disabled = true;
       sendBtn.classList.add('uploading');
-      sendBtn.textContent = '上传中 ' + state.pct + '%';
+      sendBtn.textContent = t('send.uploading', { n: state.pct });
       sendBtn.style.setProperty('--p', state.pct + '%');
       return;
     }
     if (state.failed && files.length) {
       sendBtn.disabled = false;
       sendBtn.classList.add('retry');
-      sendBtn.textContent = '没传上去，点这里重试';
+      sendBtn.textContent = t('send.retry');
       return;
     }
     sendBtn.disabled = files.length === 0;
-    sendBtn.textContent = files.length ? '上传 ' + files.length + ' 张' : '上传';
+    sendBtn.textContent = files.length ? tn('send.n', files.length) : t('send.label');
   }
 
   /* 三个入口：点选 / 拖拽 / 粘贴 */
@@ -550,19 +923,41 @@
   });
 
   /* ================= HTTP ================= */
+  var CODE_KEY = {
+    bad_request: 'code.bad_request',
+    invalid_date: 'code.invalid_date',
+    too_many_files: 'code.too_many_files',
+    file_too_large: 'code.file_too_large',
+    unsupported_type: 'code.unsupported_type',
+    not_found: 'code.not_found',
+    ocr_failed: 'code.ocr_failed',
+    parse_failed: 'code.parse_failed',
+    llm_unavailable: 'code.llm_unavailable',
+    internal: 'code.internal'
+  };
+  function codeKey(code) { return code && CODE_KEY[code] ? CODE_KEY[code] : ''; }
+
+  /* 带 i18n key 的失败对象：切换语言时能重新翻译 */
+  function errObj(key, params, status) {
+    return { status: status || 0, i18nKey: key, i18nParams: params, message: t(key, params) };
+  }
+
   function parseErr(x) {
-    var msg = '';
-    try {
-      var body = JSON.parse(x.responseText);
-      if (body && body.error && body.error.message) msg = body.error.message;
-    } catch (e) { /* 非 JSON */ }
-    if (msg) return msg;
-    if (x.status === 400) return '这次没传上去：请求不太对，检查一下日期和图片';
-    if (x.status === 413) return '这次没传上去：单张图片不能超过 20MB';
-    if (x.status === 415) return '这次没传上去：只接受 jpg / png / heic / webp';
-    if (x.status === 404) return '这次没传上去：服务地址可能不对';
-    if (x.status >= 500) return '这次没传上去：NAS 那边出错了，等一会儿再试';
-    return '这次没传上去（' + x.status + '），点重试再来一次';
+    var body = null, code = '', msg = '';
+    try { body = JSON.parse(x.responseText); } catch (e) { body = null; }
+    if (body && body.error) {
+      code = body.error.code || '';
+      msg = body.error.message || '';
+    }
+    var key = codeKey(code);
+    if (key) return errObj(key, null, x.status);
+    if (msg) return { status: x.status, message: msg };
+    if (x.status === 400) return errObj('err.http400', null, 400);
+    if (x.status === 413) return errObj('err.http413', null, 413);
+    if (x.status === 415) return errObj('err.http415', null, 415);
+    if (x.status === 404) return errObj('err.http404', null, 404);
+    if (x.status >= 500) return errObj('err.http500', null, x.status);
+    return errObj('err.httpOther', { status: x.status }, x.status);
   }
 
   function getJSON(path, timeout) {
@@ -576,11 +971,11 @@
           try { d = x.responseText ? JSON.parse(x.responseText) : null; } catch (e) { d = null; }
           resolve(d);
         } else {
-          reject({ status: x.status, message: parseErr(x) });
+          reject(parseErr(x));
         }
       };
-      x.onerror = function () { reject({ status: 0, message: '连不上 NAS，检查服务地址或网络' }); };
-      x.ontimeout = function () { reject({ status: 0, message: '等太久没回应，稍后点重试' }); };
+      x.onerror = function () { reject(errObj('err.offline')); };
+      x.ontimeout = function () { reject(errObj('err.timeout')); };
       x.send();
     });
   }
@@ -596,11 +991,11 @@
           try { d = x.responseText ? JSON.parse(x.responseText) : null; } catch (e) { d = null; }
           resolve(d);
         } else {
-          reject({ status: x.status, message: parseErr(x) });
+          reject(parseErr(x));
         }
       };
-      x.onerror = function () { reject({ status: 0, message: '连不上 NAS，检查服务地址或网络' }); };
-      x.ontimeout = function () { reject({ status: 0, message: 'NAS 一直没有回应，请稍后再试' }); };
+      x.onerror = function () { reject(errObj('err.offline')); };
+      x.ontimeout = function () { reject(errObj('err.timeout')); };
       x.send();
     });
   }
@@ -617,15 +1012,15 @@
         if (x.status >= 200 && x.status < 300) {
           var d = null;
           try { d = JSON.parse(x.responseText); } catch (e) { d = null; }
-          if (!d || !d.batch_id) { reject({ status: x.status, message: '服务返回的内容看不懂，点重试再来一次' }); return; }
+          if (!d || !d.batch_id) { reject(errObj('err.badresp')); return; }
           onProgress(100);
           resolve(d);
         } else {
-          reject({ status: x.status, message: parseErr(x) });
+          reject(parseErr(x));
         }
       };
-      x.onerror = function () { reject({ status: 0, message: '没传上去：连不上 NAS，检查是不是同一个 Wi-Fi' }); };
-      x.ontimeout = function () { reject({ status: 0, message: '没传上去：等了 30 秒还没回应，点重试再来一次' }); };
+      x.onerror = function () { reject(errObj('err.upload.offline')); };
+      x.ontimeout = function () { reject(errObj('err.upload.timeout')); };
       x.send(fd);
     });
   }
@@ -633,7 +1028,7 @@
   /* ================= 上传 ================= */
   function submit() {
     if (state.uploading || !files.length) return;
-    if (!dateEl.value) { showErr('先选一下这是哪天的作业'); return; }
+    if (!dateEl.value) { setErr({ key: 'err.noDate' }); return; }
 
     var n = files.length;
     state.uploading = true;
@@ -649,7 +1044,7 @@
 
     function onProgress(p) {
       state.pct = p;
-      sendBtn.textContent = '上传中 ' + p + '%';
+      sendBtn.textContent = t('send.uploading', { n: p });
       sendBtn.style.setProperty('--p', p + '%');
     }
 
@@ -665,15 +1060,15 @@
       dateEl.value = todayYmd();
       paint();
       toast(res.duplicate_of
-        ? '这些图片之前传过了，没有重复入库'
-        : '收到 ' + (res.image_count || n) + ' 张，处理完电视上就有');
+        ? { key: 'toast.dup' }
+        : { countKey: 'toast.ok', n: (res.image_count || n) });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       loadList();
     }).catch(function (err) {
       state.uploading = false;
       state.failed = true;
       refreshBtn();
-      showErr(err && err.message ? err.message : '没传上去，点重试再来一次');
+      showErrObj(err, 'err.upload.failed');
     });
   }
 
@@ -681,9 +1076,9 @@
 
   /* ================= 最近上传 ================= */
   function statusMeta(s) {
-    if (s === 'done') return { cls: 'done', label: '已入库' };
-    if (s === 'failed') return { cls: 'failed', label: '这次没识别出来' };
-    return { cls: 'proc', label: '处理中' };
+    if (s === 'done') return { cls: 'done', key: 'st.done' };
+    if (s === 'failed') return { cls: 'failed', key: 'st.failed' };
+    return { cls: 'proc', key: 'st.proc' };
   }
 
   function isProcessing(s) { return s === 'pending' || s === 'ocr' || s === 'parsing'; }
@@ -694,7 +1089,7 @@
     if (!batches.length) {
       var e = document.createElement('div');
       e.className = 'emptyline';
-      e.textContent = '还没有上传过';
+      e.textContent = t('recent.empty');
       tasksEl.appendChild(e);
       return;
     }
@@ -705,20 +1100,21 @@
 
       var info = document.createElement('div');
       info.className = 'info';
-      var t = document.createElement('div');
-      t.className = 't';
-      t.textContent = labelDate(b.date);
+      var tEl = document.createElement('div');
+      tEl.className = 't';
+      tEl.textContent = labelDate(b.date);
       var c = document.createElement('div');
       c.className = 'c';
-      c.textContent = (hmOf(b.created_at) || '') +
-        (hmOf(b.created_at) ? ' · ' : '') +
-        (b.image_count || 0) + ' 张' +
-        (b.status === 'done' && b.item_count ? ' · ' + b.item_count + ' 条' : '');
-      info.appendChild(t); info.appendChild(c);
+      var hm = hmOf(b.created_at);
+      c.textContent = (hm || '') +
+        (hm ? ' · ' : '') +
+        tn('task.count', b.image_count || 0) +
+        (b.status === 'done' && b.item_count ? ' · ' + tn('task.items', b.item_count) : '');
+      info.appendChild(tEl); info.appendChild(c);
 
       var badge = document.createElement('span');
       badge.className = 'st ' + meta.cls;
-      badge.textContent = meta.label;
+      badge.textContent = t(meta.key);
 
       row.appendChild(info);
       row.appendChild(badge);
@@ -735,16 +1131,16 @@
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn';
-    btn.textContent = '重新识别';
+    btn.textContent = t('action.rerun');
     btn.onclick = function () {
       btn.disabled = true;
-      btn.textContent = '已排上…';
+      btn.textContent = t('action.rerun.queued');
       var job = mock ? mockRerun(b.id) : sendJSON('POST', '/api/batch/' + b.id + '/rerun');
       job.then(function () { loadList(); })
         .catch(function (err) {
           btn.disabled = false;
-          btn.textContent = '重新识别';
-          showErr(err && err.message ? err.message : '重新识别没成功，过一会儿再试');
+          btn.textContent = t('action.rerun');
+          showErrObj(err, 'action.rerun.fail');
         });
     };
     return btn;
@@ -754,13 +1150,13 @@
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn';
-    btn.textContent = '删除';
+    btn.textContent = t('action.delete');
     var armed = false, timer = null;
 
     function reset() {
       armed = false;
       clearTimeout(timer);
-      btn.textContent = '删除';
+      btn.textContent = t('action.delete');
       btn.classList.remove('danger');
       btn.disabled = false;
     }
@@ -768,19 +1164,19 @@
     btn.onclick = function () {
       if (!armed) {
         armed = true;
-        btn.textContent = '确认删除？';
+        btn.textContent = t('action.delete.confirm');
         btn.classList.add('danger');
         timer = setTimeout(reset, 3000);
         return;
       }
       clearTimeout(timer);
       btn.disabled = true;
-      btn.textContent = '删除中';
+      btn.textContent = t('action.delete.busy');
       var job = mock ? mockDelete(b.id) : sendJSON('DELETE', '/api/batch/' + b.id);
       job.then(function () { loadList(); })
         .catch(function (err) {
           reset();
-          showErr(err && err.message ? err.message : '没删掉，过一会儿再试');
+          showErrObj(err, 'action.delete.fail');
         });
     };
     return btn;
@@ -788,17 +1184,19 @@
 
   function loadList(opts) {
     var silent = !!(opts && opts.silent);
-    if (mock) { batches = mockBatches; paintFrom(batches, silent); return; }
+    if (mock) { batches = mockBatches; listFailed = false; paintFrom(batches, silent); return; }
 
     getJSON('/api/batches?limit=6').then(function (d) {
       batches = (d && d.batches) || [];
+      listFailed = false;
       paintFrom(batches, silent);
     }).catch(function (err) {
+      listFailed = true;
       clearTimeout(pollTimer);
       tasksEl.textContent = '';
       var e = document.createElement('div');
       e.className = 'emptyline';
-      e.textContent = '读不到最近上传：' + (err && err.message ? err.message : '检查服务地址');
+      e.textContent = t('recent.fail', { msg: (err && err.message) || t('recent.failFallback') });
       tasksEl.appendChild(e);
     });
   }
@@ -835,7 +1233,7 @@
     } catch (e) { /* 隐私模式 */ }
     lastSig = '';
     clearErr();
-    showHint(v ? '服务地址已保存：' + v : '已改回同源地址');
+    showHint(v ? t('base.saved', { v: v }) : t('base.sameorigin'));
     loadList();
   };
 
@@ -851,21 +1249,33 @@
   var aiMessage = document.getElementById('aiMessage');
   var aiLoaded = false;
   var aiSaved = null;
+  var aiNoticeState = null;
 
-  function aiNotice(text, kind) {
-    aiMessage.textContent = text;
-    aiMessage.className = 'ai-message' + (kind ? ' ' + kind : '');
+  function renderAiNotice() {
+    var s = aiNoticeState;
+    if (!s) {
+      aiMessage.textContent = '';
+      aiMessage.className = 'ai-message';
+      return;
+    }
+    aiMessage.textContent = specText(s);
+    aiMessage.className = 'ai-message' + (s.kind ? ' ' + s.kind : '');
+  }
+  function setAiNotice(spec) { aiNoticeState = spec; renderAiNotice(); }
+
+  function aiNoticeFromErr(e) {
+    if (e && e.i18nKey) setAiNotice({ key: e.i18nKey, params: e.i18nParams, kind: 'error' });
+    else setAiNotice({ text: (e && e.message) || t('ai.reqfail'), kind: 'error' });
   }
 
   function aiKeyHint() {
     var same = aiSaved && aiSaved.has_api_key &&
-      aiBase.value.trim().replace(/\/+$/, '') === aiSaved.base_url.replace(/\/+$/, '');
+      aiBase.value.trim().replace(/\/+$/, '') === String(aiSaved.base_url || '').replace(/\/+$/, '');
     aiKey.disabled = aiNoAuth.checked;
-    aiKey.placeholder = aiNoAuth.checked ? '此服务无需密钥' : same ? '已保存，留空保持不变' : '填写服务商提供的密钥';
-    document.getElementById('aiKeyHelp').textContent = aiNoAuth.checked ?
-      '仅适用于未启用密钥的本地服务。' :
-      same ? '密钥已保存且不会回显；留空保持不变，更换 API 地址后需重新填写。' :
-      '密钥只保存在 NAS，保存后不回显到网页。';
+    aiKey.placeholder = aiNoAuth.checked ? t('ai.key.ph.none')
+      : same ? t('ai.key.ph.keep') : t('ai.key.ph');
+    document.getElementById('aiKeyHelp').textContent = aiNoAuth.checked ? t('ai.key.hint.none')
+      : same ? t('ai.key.hint.keep') : t('ai.key.hint.default');
   }
 
   function aiFill(saved) {
@@ -885,30 +1295,35 @@
       x.timeout = 75000;
       if (body) x.setRequestHeader('Content-Type', 'application/json');
       x.onload = function () {
-        var d;
-        try { d = JSON.parse(x.responseText); } catch (e) { reject(new Error('服务返回的内容看不懂')); return; }
-        if (x.status >= 200 && x.status < 300) resolve(d);
-        else reject(new Error(d.error && d.error.message ? d.error.message : 'AI 设置请求没有完成'));
+        var d = null;
+        try { d = JSON.parse(x.responseText); } catch (e) { reject(errObj('ai.badjson')); return; }
+        if (x.status >= 200 && x.status < 300) { resolve(d); return; }
+        var code = (d && d.error && d.error.code) || '';
+        var key = codeKey(code);
+        if (key) { reject(errObj(key)); return; }
+        var msg = (d && d.error && d.error.message) || '';
+        if (msg) { reject({ message: msg }); return; }
+        reject(errObj('ai.reqfail'));
       };
-      x.onerror = function () { reject(new Error('连不上 NAS，设置没有保存')); };
-      x.ontimeout = function () { reject(new Error('等待服务回应超时，请稍后重试')); };
+      x.onerror = function () { reject(errObj('ai.offline')); };
+      x.ontimeout = function () { reject(errObj('ai.timeout')); };
       x.send(body ? JSON.stringify(body) : null);
     });
   }
 
   aiPanel.addEventListener('toggle', function () {
     if (!aiPanel.open || aiLoaded) return;
-    if (mock) { aiFields.disabled = true; aiNotice('演示模式不读取或修改真实 AI 设置'); return; }
+    if (mock) { aiFields.disabled = true; setAiNotice({ key: 'ai.mock' }); return; }
     try {
       if (location.protocol === 'file:' || new URL(api('/api/settings/ai'), location.href).origin !== location.origin) {
-        aiFields.disabled = true; aiNotice('请直接打开 NAS 的上传页，再设置 AI 服务。', 'error'); return;
+        aiFields.disabled = true; setAiNotice({ key: 'ai.file', kind: 'error' }); return;
       }
-    } catch (e) { aiFields.disabled = true; aiNotice('请先检查 NAS 服务地址。', 'error'); return; }
+    } catch (e) { aiFields.disabled = true; setAiNotice({ key: 'ai.badbase', kind: 'error' }); return; }
     aiFields.disabled = true;
-    aiNotice('正在读取设置…');
+    setAiNotice({ key: 'ai.loading' });
     aiRequest('GET', '/api/settings/ai').then(function (d) {
-      aiFill(d); aiLoaded = true; aiNotice('');
-    }).catch(function (err) { aiNotice(err.message, 'error'); })
+      aiFill(d); aiLoaded = true; setAiNotice(null);
+    }).catch(aiNoticeFromErr)
       .then(function () { aiFields.disabled = false; });
   });
 
@@ -922,7 +1337,7 @@
       aiBase.value = '';
       aiModel.value = '';
     }
-    aiKeyHint(); aiNotice('');
+    aiKeyHint(); setAiNotice(null);
   };
   aiBase.oninput = aiKeyHint;
   aiNoAuth.onchange = function () { if (aiNoAuth.checked) aiKey.value = ''; aiKeyHint(); };
@@ -932,13 +1347,17 @@
     var payload = {profile:aiProfile.value, base_url:aiBase.value.trim(), model:aiModel.value.trim(),
       api_key:aiKey.value, no_auth:aiNoAuth.checked};
     aiFields.disabled = true;
-    aiNotice(test ? '正在测试图片请求…' : '正在保存设置…');
+    setAiNotice({ key: test ? 'ai.testing' : 'ai.saving' });
     aiRequest(test ? 'POST' : 'PUT', test ? '/api/settings/ai/test' : '/api/settings/ai', payload)
       .then(function (d) {
-        if (test) aiNotice(d.message, 'success');
-        else { aiFill(d); aiNotice('已保存。新的识别任务会立即使用这组配置。', 'success'); }
+        if (test) {
+          setAiNotice({ text: (d && d.message) || t('ai.test.ok'), kind: 'success' });
+        } else {
+          aiFill(d);
+          setAiNotice({ key: 'ai.saved', kind: 'success' });
+        }
       })
-      .catch(function (err) { aiNotice(err.message, 'error'); })
+      .catch(aiNoticeFromErr)
       .then(function () { aiFields.disabled = false; aiKeyHint(); });
   }
   document.getElementById('aiTest').onclick = function () { aiSubmit(true); };
@@ -958,12 +1377,12 @@
   }
 
   function seedBatches() {
-    var t = todayYmd();
+    var td = todayYmd();
     var nowTs = Date.now();
     return [
-      { id: 318, date: t, created_at: iso(nowTs - 18 * 60000), status: 'done', image_count: 3, item_count: 9, note: '语文、数学、英语' },
-      { id: 317, date: t, created_at: iso(nowTs - 34 * 60000), status: 'pending', image_count: 2, item_count: 0, note: null },
-      { id: 316, date: addDays(t, -1), created_at: iso(nowTs - 26 * 3600000), status: 'failed', image_count: 1, item_count: 0, note: null, error: '识别服务连接超时' }
+      { id: 318, date: td, created_at: iso(nowTs - 18 * 60000), status: 'done', image_count: 3, item_count: 9, note: '语文、数学、英语' },
+      { id: 317, date: td, created_at: iso(nowTs - 34 * 60000), status: 'pending', image_count: 2, item_count: 0, note: null },
+      { id: 316, date: addDays(td, -1), created_at: iso(nowTs - 26 * 3600000), status: 'failed', image_count: 1, item_count: 0, note: null, error: '识别服务连接超时' }
     ];
   }
 
@@ -1017,6 +1436,8 @@
   if (mock) {
     demoBadge.classList.add('on');
   }
+  applyStatic();
+  renderToday();
   paint();
   loadList();
   if (location.hash === '#aiSettings') aiPanel.open = true;
