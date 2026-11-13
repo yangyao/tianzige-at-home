@@ -58,7 +58,7 @@ struct SettingsSheet: View {
     private var noticeLine: some View {
         let text = notice.map(Texts.noticeText)
         Group {
-            if let text {
+            if let text, let notice {
                 switch notice {
                 case .connected:
                     Label(text, systemImage: "checkmark.circle")

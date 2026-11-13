@@ -40,7 +40,7 @@ struct TzMetrics {
     let scale: CGFloat
 
     static func fit(height: CGFloat) -> TzMetrics {
-        TzMetrics(scale: min(max(height / 1080, 0.5), 1.6))
+        TzMetrics(scale: Swift.min(Swift.max(height / 1080, 0.5), 1.6))
     }
 
     func dp(_ value: CGFloat) -> CGFloat { value * scale }
@@ -76,11 +76,9 @@ extension EnvironmentValues {
 
 extension Color {
     init(hex: UInt32) {
-        self.init(
-            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
-            green: CGFloat((hex >> 8) & 0xFF) / 255,
-            blue: CGFloat(hex & 0xFF) / 255,
-            opacity: 1
-        )
+        let red = Double((hex >> 16) & 0xFF) / 255
+        let green = Double((hex >> 8) & 0xFF) / 255
+        let blue = Double(hex & 0xFF) / 255
+        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
     }
 }

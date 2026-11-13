@@ -120,9 +120,9 @@ enum DayLogic {
     static func clampSelectable(_ date: Date, today: Date) -> Date {
         let c = calendar
         let d = startOfDay(date)  // 跨夏令时加 7 天可能落进前一天 23 点，先归零
-        let min = startOfDay(c.date(byAdding: .day, value: -MAX_DAYS_BACK, to: today) ?? today)
-        let max = startOfDay(c.date(byAdding: .day, value: MAX_DAYS_FORWARD, to: today) ?? today)
-        return min(max(d, min), max)
+        let earliest = startOfDay(c.date(byAdding: .day, value: -MAX_DAYS_BACK, to: today) ?? today)
+        let latest = startOfDay(c.date(byAdding: .day, value: MAX_DAYS_FORWARD, to: today) ?? today)
+        return min(max(d, earliest), latest)
     }
 
     static func shiftDate(_ current: Date, deltaDays: Int, today: Date) -> Date {
