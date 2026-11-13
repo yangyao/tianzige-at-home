@@ -28,6 +28,7 @@
     <!-- 看图 -->
     <string name="no_photo">没有原图</string>
     <string name="cd_homework_photo">作业原图</string>
+    <string name="teacher_note_title">老师要求</string>
 
     <!-- 设置 -->
     <string name="server_address">服务端地址</string>

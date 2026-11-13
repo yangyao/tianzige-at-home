@@ -30,6 +30,7 @@
     <!-- 看图 -->
     <string name="no_photo">No photo</string>
     <string name="cd_homework_photo">Homework photo</string>
+    <string name="teacher_note_title">Teacher note</string>
 
     <!-- 设置 -->
     <string name="server_address">Server address</string>

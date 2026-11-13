@@ -28,9 +28,17 @@ import com.tianzige.tv.vm.HomeViewModel
 // Photos and subjects participate in the same native spatial focus search as dates.
 @Composable
 fun PendingPanel(day: DayView, imageIndex: Int, baseUrl: String, vm: HomeViewModel) {
-    val dims = LocalTz.current.dimens
+    val tz = LocalTz.current
+    val dims = tz.dimens
     val rows = day.images.chunked(3)
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(dims.dp(24f))) {
+        day.note?.takeIf { it.isNotBlank() }?.let { note ->
+            Text(
+                stringResource(R.string.teacher_note_title) + "\n" + note.trim(),
+                style = tz.type.body,
+                color = TextPrimary,
+            )
+        }
         rows.forEachIndexed { rowIndex, images ->
             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dims.dp(24f))) {
                 images.forEachIndexed { columnIndex, image ->
@@ -66,6 +74,12 @@ fun ReadyPanel(day: DayView, baseUrl: String, vm: HomeViewModel) {
             Modifier.weight(0.48f).fillMaxHeight().clipToBounds(),
             verticalArrangement = Arrangement.spacedBy(dims.dp(28f)),
         ) {
+            day.note?.takeIf { it.isNotBlank() }?.let { note ->
+                Column(verticalArrangement = Arrangement.spacedBy(dims.dp(12f))) {
+                    Text(stringResource(R.string.teacher_note_title), style = tz.type.body, color = Accent)
+                    Text(note.trim(), style = tz.type.h2, color = TextPrimary)
+                }
+            }
             day.subjects.forEach { group ->
                 Column(verticalArrangement = Arrangement.spacedBy(dims.dp(12f))) {
                     Text(subjectText(group.subject), style = tz.type.body, color = Accent)
